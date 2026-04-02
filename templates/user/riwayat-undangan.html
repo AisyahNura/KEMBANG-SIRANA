@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Riwayat Undangan | SIRANA KEMBANG</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+  <nav class="navbar">
+    <div class="logo">
+      <h3>SIRANA KEMBANG</h3>
+      <small>Sistem Informasi Rapat dan Agenda</small>
+    </div>
+
+    <div class="nav-right">
+      <a href="{{ url_for('user_dashboard') }}" class="nav-item">
+        <span class="icon">⬅️</span>
+        <span class="nav-text">Kembali ke Dashboard</span>
+      </a>
+    </div>
+  </nav>
+
+  <section class="dashboard-header">
+    <h2>Riwayat Undangan</h2>
+    <p>Lihat status undangan yang sudah kamu ajukan.</p>
+  </section>
+
+  <section class="list-section">
+    <div class="list-card">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, message in messages %}
+            <p>{{ message }}</p>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+
+      <table border="1" cellpadding="10" cellspacing="0" width="100%">
+        <thead>
+          <tr>
+            <th>No</th>
+            <th>Kegiatan</th>
+            <th>Tanggal</th>
+            <th>Waktu</th>
+            <th>Tempat</th>
+            <th>Status</th>
+            <th>Catatan Admin</th>
+            <th>Aksi</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for u in data_undangan %}
+          <tr>
+            <td>{{ loop.index }}</td>
+            <td>{{ u.kegiatan }}</td>
+            <td>{{ u.tanggal }}</td>
+            <td>{{ u.waktu }}</td>
+            <td>{{ u.tempat }}</td>
+            <td>{{ u.status }}</td>
+            <td>{{ u.catatan_admin or '-' }}</td>
+            <td>
+              {% if u.status == 'approved' %}
+                <a href="{{ url_for('preview_undangan_user', id=u.id) }}">Lihat</a>
+              {% elif u.status == 'pending' %}
+                Menunggu Persetujuan
+              {% else %}
+                Ditolak
+              {% endif %}
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="8" style="text-align:center;">Belum ada undangan.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+</body>
+</html>

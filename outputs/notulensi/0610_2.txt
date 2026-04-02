@@ -1,0 +1,13 @@
+
+NOTULENSI RAPAT
+
+File Rekaman : 0610_2.mp4
+
+Hasil sementara:
+
+- Sistem menerima file rekaman.
+- Rekaman berhasil diproses.
+- Tahap berikutnya diarization dan transkripsi otomatis.
+
+Catatan:
+Ini masih notulensi dummy.

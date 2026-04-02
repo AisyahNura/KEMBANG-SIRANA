@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ACC Undangan | SIRANA KEMBANG</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+</head>
+<body>
+
+  <div class="admin-container">
+    <aside class="sidebar">
+      <div>
+        <h1 class="logo">SIRANA<br>KEMBANG</h1>
+        <p class="admin-text">Admin Panel</p>
+
+        <nav>
+          <a href="{{ url_for('admin_dashboard') }}">Dashboard</a>
+          <a href="{{ url_for('admin_approval') }}" class="active">ACC Undangan</a>
+          <a href="{{ url_for('admin_monitoring') }}">Monitoring</a>
+        </nav>
+      </div>
+
+      <div class="sidebar-bottom">
+        <a href="#" class="logout-btn" id="logoutBtn">Logout</a>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <div class="header-row">
+        <h1>ACC Undangan</h1>
+        <input type="text" class="search-box" placeholder="Cari Undangan...">
+      </div>
+
+      <section class="table-section">
+        <div class="section-title pending-title">Menunggu Persetujuan</div>
+
+        <table>
+          <thead>
+            <tr>
+              <th>Judul</th>
+              <th>Pembuat</th>
+              <th>Tanggal dibuat</th>
+              <th>Status</th>
+              <th>Aksi</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Rapat Koordinasi Bulanan</td>
+              <td>Budi Santoso</td>
+              <td>2024-12-08</td>
+              <td><span class="badge pending">Pending</span></td>
+              <td class="action">👁️ ✔️ ❌</td>
+            </tr>
+            <tr>
+              <td>Rapat Olimpiade Madrasah</td>
+              <td>Ani Widya</td>
+              <td>2024-12-07</td>
+              <td><span class="badge pending">Pending</span></td>
+              <td class="action">👁️ ✔️ ❌</td>
+            </tr>
+            <tr>
+              <td>Undangan Revitalisasi BKM</td>
+              <td>Citra Dewi</td>
+              <td>2024-12-09</td>
+              <td><span class="badge pending">Pending</span></td>
+              <td class="action">👁️ ✔️ ❌</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section class="table-section">
+        <div class="section-title approved-title">Sudah disetujui</div>
+
+        <table>
+          <thead>
+            <tr>
+              <th>Judul</th>
+              <th>Pembuat</th>
+              <th>Tanggal dibuat</th>
+              <th>Status</th>
+              <th>Aksi</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Rapat Evaluasi</td>
+              <td>Doni Prakoso</td>
+              <td>2024-12-06</td>
+              <td><span class="badge approved">Approved</span></td>
+              <td class="action">👁️ ▶️</td>
+            </tr>
+            <tr>
+              <td>Seminar Nasional</td>
+              <td>Eko Wijaya</td>
+              <td>2024-12-06</td>
+              <td><span class="badge approved">Approved</span></td>
+              <td class="action">👁️ ▶️</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+    </main>
+  </div>
+<script src="{{ url_for('static', filename='js/admin.js') }}"></script>
+</body>
+</html>

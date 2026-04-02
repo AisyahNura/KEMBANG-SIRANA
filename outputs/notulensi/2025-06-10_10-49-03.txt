@@ -1,0 +1,24 @@
+NOTULENSI RAPAT
+
+Nama Kegiatan : miaw
+Tempat        : mimiw
+Peserta       : staff
+File Rekaman  : 2025-06-10_10-49-03.mp4
+
+HASIL NOTULENSI SEMENTARA
+
+1. Rapat dibuka dan sistem berhasil menerima file rekaman.
+2. Pembahasan utama berfokus pada agenda kegiatan "miaw".
+3. Lokasi pelaksanaan rapat berada di mimiw.
+4. Daftar peserta yang terlibat: staff.
+5. Rekaman telah berhasil diunggah ke sistem dan siap untuk proses lanjutan.
+6. Sistem akan melanjutkan ke tahap transkripsi, ringkasan, dan pengolahan notulensi otomatis.
+
+KESIMPULAN
+Rapat mengenai "miaw" telah berhasil dicatat ke dalam sistem SIRANA KEMBANG.
+Dokumen ini masih berupa notulensi dummy, namun data rapat sudah berhasil tersimpan.
+
+TINDAK LANJUT
+- Menunggu proses transkripsi otomatis.
+- Menyusun ringkasan rapat final.
+- Menyimpan hasil notulensi ke dashboard monitoring.

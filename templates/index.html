@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SIRANA KEMBANG</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+  <section class="hero">
+  <div class="overlay"></div>
+
+  <div class="hero-content">
+    <span class="badge">Kementerian Agama Kabupaten Jombang</span>
+
+    <h1>SIRANA KEMBANG</h1>
+
+    <p class="hero-desc">
+      Sistem Informasi Rapat dan Agenda untuk pembuatan undangan digital
+      dan notulensi otomatis yang lebih rapi dan terorganisir.
+    </p>
+
+    <div class="hero-buttons">
+      <a href="{{ url_for('login') }}" class="hero-btn secondary">Masuk</a>
+      <a href="{{ url_for('register') }}" class="hero-btn primary">Daftar</a>
+    </div>
+  </div>
+</section>
+
+</body>
+</html>

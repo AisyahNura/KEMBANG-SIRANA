@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Detail Undangan</title>
+</head>
+<body>
+  <h2>Detail Undangan</h2>
+
+  <p><strong>Nomor Surat:</strong> {{ nomor_surat }}</p>
+  <p><strong>Pembuat:</strong> {{ undangan.pembuat or 'User' }}</p>
+  <p><strong>Kegiatan:</strong> {{ undangan.kegiatan }}</p>
+  <p><strong>Tanggal:</strong> {{ tanggal_format }}</p>
+  <p><strong>Waktu:</strong> {{ undangan.waktu }}</p>
+  <p><strong>Tempat:</strong> {{ undangan.tempat }}</p>
+  <p><strong>Peserta:</strong> {{ undangan.peserta }}</p>
+  <p><strong>Status:</strong> {{ undangan.status }}</p>
+
+  {% if undangan.status == 'pending' %}
+    <form method="POST" action="{{ url_for('setujui_undangan', id=undangan.id) }}" style="display:inline-block;">
+      <button type="submit">Setujui</button>
+    </form>
+
+    <form method="POST" action="{{ url_for('tolak_undangan', id=undangan.id) }}" style="margin-top: 20px;">
+      <label>Catatan Penolakan</label><br>
+      <textarea name="catatan_admin" rows="4" cols="50" required></textarea><br><br>
+      <button type="submit">Tolak</button>
+    </form>
+  {% endif %}
+</body>
+</html>

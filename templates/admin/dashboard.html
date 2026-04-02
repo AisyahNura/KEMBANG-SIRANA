@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard Admin | SIRANA KEMBANG</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+</head>
+<body>
+
+  <div class="admin-container">
+    <aside class="sidebar">
+      <div>
+        <h1 class="logo">SIRANA<br>KEMBANG</h1>
+        <p class="admin-text">Admin Panel</p>
+
+        <nav>
+          <a href="{{ url_for('admin_dashboard') }}" class="active">Dashboard</a>
+          <a href="{{ url_for('admin_approval') }}">ACC Undangan</a>
+          <a href="{{ url_for('admin_monitoring') }}">Monitoring</a>
+        </nav>
+      </div>
+
+      <div class="sidebar-bottom">
+        <a href="#" class="logout-btn" id="logoutBtn">Logout</a>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <h1>Dashboard Admin</h1>
+
+      <div class="stats">
+        <div class="card blue">
+          <h2>3</h2>
+          <p>Menunggu ACC</p>
+        </div>
+
+        <div class="card green">
+          <h2>2</h2>
+          <p>Sudah disetujui</p>
+        </div>
+
+        <div class="card orange">
+          <h2>5</h2>
+          <p>Total Aktivitas</p>
+        </div>
+      </div>
+
+      <section class="activity-box">
+        <h3>Aktivitas Terbaru</h3>
+
+        <div class="activity-item">
+          <div class="icon blue-icon"></div>
+          <div>
+            <strong>Membuat undangan rapat Koordinasi Bulanan</strong>
+            <p>2025-11-15 • 09:00 • Aula Darul Hikmah</p>
+          </div>
+        </div>
+
+        <div class="activity-item">
+          <div class="icon blue-icon"></div>
+          <div>
+            <strong>Membuat undangan rapat Olimpiade Madrasah Indonesia</strong>
+            <p>2025-11-15 • 08:00 • Aula PLHUT</p>
+          </div>
+        </div>
+
+        <div class="activity-item">
+          <div class="icon blue-icon"></div>
+          <div>
+            <strong>Membuat undangan Revitalisasi BKM</strong>
+            <p>2025-11-15 • 08:00 • Hotel Fatma Jombang</p>
+          </div>
+        </div>
+
+        <div class="activity-item">
+          <div class="icon purple-icon"></div>
+          <div>
+            <strong>Upload rekaman notulen Seminar Nasional</strong>
+            <p>2025-10-11 • 12:00 • Zoom meeting</p>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+<script src="{{ url_for('static', filename='js/admin.js') }}"></script>
+</body>
+</html>

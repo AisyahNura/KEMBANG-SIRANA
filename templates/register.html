@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Register | SIRANA KEMBANG</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+  <div class="auth-container">
+    <h2>Daftar</h2>
+    <p>Buat akun baru untuk mengakses sistem</p>
+
+    <form>
+      <input type="text" placeholder="Nama Lengkap" required>
+      <input type="email" placeholder="Email" required>
+      <input type="password" placeholder="Password" required>
+      <button type="submit">Daftar</button>
+    </form>
+
+    <div class="switch">
+      Sudah punya akun?
+      <a href="{{ url_for('login') }}">Masuk</a>
+    </div>
+  </div>
+
+</body>
+</html>

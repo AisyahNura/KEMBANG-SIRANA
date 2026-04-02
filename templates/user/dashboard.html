@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard | SIRANA KEMBANG</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+  <nav class="navbar">
+    <div class="logo">
+      <h3>SIRANA KEMBANG</h3>
+      <small>Sistem Informasi Rapat dan Agenda</small>
+    </div>
+
+    <div class="nav-right">
+      <a href="{{ url_for('index') }}" class="nav-item">
+        <span class="icon">🏠</span>
+        <span class="nav-text">Beranda</span>
+      </a>
+    </div>
+  </nav>
+
+  <section class="dashboard-header">
+    <h2>Dashboard</h2>
+    <p>Selamat datang di Sistem Informasi Rapat dan Agenda Kemenag Jombang</p>
+  </section>
+
+  <section class="dashboard-cards">
+    <div class="big-card dark-green">
+      <h3>📩 Buat Undangan Rapat</h3>
+      <p>Membuat undangan rapat resmi dengan template Kemenag</p>
+      <button onclick="window.location.href='{{ url_for('buat_undangan') }}'">
+        + Undangan Baru
+      </button>
+    </div>
+
+    <div class="big-card light-green">
+      <h3>🎙️ Notulensi Otomatis</h3>
+      <p>Ubah rekaman rapat menjadi notulensi otomatis</p>
+      <button onclick="window.location.href='{{ url_for('notulensi') }}'">
+        + Notulensi Baru
+      </button>
+    </div>
+  </section>
+
+  <section class="list-section">
+    <div class="list-header">
+      <h3>Undangan Terakhir</h3>
+      <a href="{{ url_for('riwayat_undangan') }}">Lihat semua</a>
+    </div>
+
+    <div class="list-item">
+      <div>
+        <strong>Rapat Koordinasi Bulanan</strong>
+        <p>2025-11-15 • 09.00 • Aula Darul Hikmah</p>
+      </div>
+      <button class="small-btn">Selengkapnya</button>
+    </div>
+
+    <div class="list-item">
+      <div>
+        <strong>Rapat Olimpiade Madrasah Indonesia</strong>
+        <p>2025-11-25 • 08.00 • Aula PLHUT</p>
+      </div>
+      <button class="small-btn">Selengkapnya</button>
+    </div>
+  </section>
+
+  <section class="list-section">
+    <div class="list-header">
+      <h3>Notulensi Terakhir</h3>
+      <a href="#">Lihat semua</a>
+    </div>
+
+    <div class="list-item">
+      <div>
+        <strong>Revitalisasi BKM</strong>
+        <p>2025-11-25 • 08.00 • Hotel Fatma Jombang</p>
+      </div>
+      <span class="doc-icon">📄</span>
+    </div>
+
+    <div class="list-item">
+      <div>
+        <strong>Rapat Monev</strong>
+        <p>2025-09-20 • 08.00 • Aula PLHUT</p>
+      </div>
+      <span class="doc-icon">📄</span>
+    </div>
+  </section>
+
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

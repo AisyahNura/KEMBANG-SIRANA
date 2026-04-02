@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Notulensi | SIRANA KEMBANG</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+  <nav class="navbar">
+    <div class="logo">
+      <h3>SIRANA KEMBANG</h3>
+      <small>Sistem Informasi Rapat dan Agenda</small>
+    </div>
+
+    <div class="nav-right">
+      <a href="{{ url_for('user_dashboard') }}" class="nav-item">
+        <span class="icon">⬅️</span>
+        <span class="nav-text">Kembali ke Dashboard</span>
+      </a>
+    </div>
+  </nav>
+
+  <section class="dashboard-header">
+    <h2>Notulensi Otomatis</h2>
+    <p>Lengkapi data rapat dan unggah file audio untuk menghasilkan notulensi secara otomatis.</p>
+  </section>
+
+  <section class="form-section">
+    <div class="form-card">
+      <h3>Form Data Notulensi</h3>
+
+      <form method="POST" enctype="multipart/form-data">
+
+        <label for="kegiatan">Nama Kegiatan</label>
+        <input type="text" id="kegiatan" name="kegiatan" placeholder="Masukkan nama kegiatan">
+
+        <label for="tempat">Tempat</label>
+        <input type="text" id="tempat" name="tempat" placeholder="Masukkan lokasi kegiatan">
+
+        <label for="peserta">Peserta</label>
+        <input type="text" id="peserta" name="peserta" placeholder="Contoh: Kepala Madrasah, Staf TU, dll">
+
+        <div class="upload-box">
+          <div class="upload-icon">🎙️</div>
+          <p><strong>Upload file audio rapat</strong></p>
+          <p>Maksimal durasi 60 menit</p>
+          <input type="file" id="audioFile" name="audio" accept=".mp3,.wav,.m4a,audio/*" required>
+        </div>
+
+        <button type="submit" class="btn-green">Generate Notulensi</button>
+
+      </form>
+
+      {% if message %}
+      <div style="margin-top:20px; padding:12px; background:#e8f5e9; color:#2e7d32; border-radius:8px;">
+        {{ message }}
+      </div>
+      {% endif %}
+    </div>
+  </section>
+
+  {% if hasil_notulensi %}
+  <section id="hasilNotulensi" class="preview">
+    <div class="preview-card">
+      <div class="preview-header">
+        <h3>Hasil Notulensi</h3>
+        <p>Hasil transkripsi dan ringkasan rapat ditampilkan di bawah ini.</p>
+      </div>
+
+      <div class="template-box" id="resultText">
+        <pre style="white-space: pre-wrap;">{{ hasil_notulensi }}</pre>
+
+        <!-- ✅ FIX DOWNLOAD -->
+        {% if file_path %}
+        <a href="{{ url_for('download_notulensi', filename=file_path.split('\\')[-1]) }}"
+           class="btn-green"
+           style="margin-top:15px; display:inline-block;">
+           ⬇️ Unduh Notulensi
+        </a>
+        {% endif %}
+
+      </div>
+    </div>
+  </section>
+  {% endif %}
+
+</body>
+</html>

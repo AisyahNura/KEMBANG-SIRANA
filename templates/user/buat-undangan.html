@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Buat Undangan | SIRANA KEMBANG</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+</head>
+<body>
+
+  <nav class="navbar">
+    <div class="logo">
+      <h3>SIRANA KEMBANG</h3>
+      <small>Sistem Informasi Rapat dan Agenda</small>
+    </div>
+
+    <div class="nav-right">
+      <a href="{{ url_for('user_dashboard') }}" class="nav-item">
+        <span class="icon">⬅️</span>
+        <span class="nav-text">Kembali ke Dashboard</span>
+      </a>
+    </div>
+  </nav>
+
+  <section class="dashboard-header">
+    <h2>Buat Undangan</h2>
+    <p>Lengkapi data rapat untuk membuat undangan resmi secara otomatis.</p>
+  </section>
+
+  <section class="form-section">
+    <div class="form-card">
+      <h3>Form Data Undangan</h3>
+
+      <form method="POST">
+        <label for="kegiatan">Nama Kegiatan</label>
+        <select id="kegiatan" name="kegiatan" required onchange="toggleKegiatanLainnya()">
+          <option value="">-- Pilih Kegiatan --</option>
+          <option value="Rapat">Rapat</option>
+          <option value="Seminar">Seminar</option>
+          <option value="Workshop">Workshop</option>
+          <option value="Pelantikan">Pelantikan</option>
+          <option value="Bimbingan">Bimbingan</option>
+          <option value="Lainnya">Lainnya</option>
+        </select>
+
+        <input
+          type="text"
+          id="kegiatan_lainnya"
+          name="kegiatan_lainnya"
+          placeholder="Masukkan nama kegiatan lainnya"
+          style="display:none; margin-top:10px;"
+        >
+
+        <label for="tempat">Tempat</label>
+        <select id="tempat" name="tempat" required onchange="toggleTempatLainnya()">
+          <option value="">-- Pilih Tempat --</option>
+          <option value="Darul Hikmah">Darul Hikmah</option>
+          <option value="Aula Kemenag">Aula Kemenag</option>
+          <option value="Aula PLHUT">Aula PLHUT</option>
+          <option value="Lainnya">Lainnya</option>
+        </select>
+
+        <input
+          type="text"
+          id="tempat_lainnya"
+          name="tempat_lainnya"
+          placeholder="Masukkan tempat lainnya"
+          style="display:none; margin-top:10px;"
+        >
+
+        <div class="row">
+          <div class="input-group">
+            <label for="tanggal">Tanggal</label>
+            <input type="date" id="tanggal" name="tanggal" required>
+          </div>
+
+          <div class="input-group">
+            <label for="waktu">Waktu</label>
+            <input type="time" id="waktu" name="waktu" required>
+          </div>
+        </div>
+
+        <label for="peserta">Peserta</label>
+        <select id="peserta" name="peserta" required onchange="togglePesertaLainnya()">
+          <option value="">-- Pilih Peserta --</option>
+          <option value="ASN Kemenag">ASN Kemenag</option>
+          <option value="ASN Se-Jombang">ASN Se-Jombang</option>
+          <option value="Kepala KUA">Kepala KUA</option>
+          <option value="Penyuluh">Penyuluh</option>
+          <option value="Pengawas">Pengawas</option>
+          <option value="Madrasah">Madrasah</option>
+          <option value="Lainnya">Lainnya</option>
+        </select>
+
+        <input
+          type="text"
+          id="peserta_lainnya"
+          name="peserta_lainnya"
+          placeholder="Masukkan peserta lainnya"
+          style="display:none; margin-top:10px;"
+        >
+
+        <button type="submit" class="btn-green">Buat Undangan</button>
+      </form>
+    </div>
+  </section>
+
+  {% if hasil_undangan %}
+  <section class="surat-wrap">
+    <div class="lembar-surat">
+
+      <div class="kop-surat">
+        <div class="kop-logo">
+          <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Logo Kemenag">
+        </div>
+
+        <div class="kop-text">
+          <div class="baris-1">KEMENTERIAN AGAMA REPUBLIK INDONESIA</div>
+          <div class="baris-2">KANTOR KEMENTERIAN AGAMA KABUPATEN JOMBANG</div>
+          <div class="baris-3">Jalan Bupati R. Soedirman Nomor 26 Jombang Kode Pos 61419</div>
+          <div class="baris-4">Telepon (0321) 861321</div>
+          <div class="baris-5">Website: www.jombangkemenag.go.id ; E-mail: Kabjombang@kemenag.go.id</div>
+        </div>
+      </div>
+
+      <div class="garis-tebal"></div>
+      <div class="garis-tipis"></div>
+
+      <table class="meta-surat">
+        <tr>
+          <td class="meta-label">Nomor</td>
+          <td class="meta-sep">:</td>
+          <td>{{ nomor_surat }}</td>
+          <td class="meta-tanggal">Jombang, {{ tanggal }}</td>
+        </tr>
+        <tr>
+          <td class="meta-label">Sifat</td>
+          <td class="meta-sep">:</td>
+          <td colspan="2">Penting</td>
+        </tr>
+        <tr>
+          <td class="meta-label">Lampiran</td>
+          <td class="meta-sep">:</td>
+          <td colspan="2">-</td>
+        </tr>
+        <tr>
+          <td class="meta-label">Hal</td>
+          <td class="meta-sep">:</td>
+          <td colspan="2">{{ kegiatan }}</td>
+        </tr>
+      </table>
+
+      <div class="tujuan">
+        <div>Yth. {{ peserta }}</div>
+        <div>di Tempat</div>
+      </div>
+
+      <div class="paragraf">
+        Dalam rangka pelaksanaan kegiatan <strong>{{ kegiatan }}</strong>, kami mengundang
+        Bapak/Ibu untuk hadir pada kegiatan yang akan dilaksanakan pada:
+      </div>
+
+      <table class="detail-rapat">
+        <tr>
+          <td class="detail-label">Hari/Tanggal</td>
+          <td class="detail-sep">:</td>
+          <td>{{ tanggal }}</td>
+        </tr>
+        <tr>
+          <td class="detail-label">Waktu</td>
+          <td class="detail-sep">:</td>
+          <td>{{ waktu }}</td>
+        </tr>
+        <tr>
+          <td class="detail-label">Tempat</td>
+          <td class="detail-sep">:</td>
+          <td>{{ tempat }}</td>
+        </tr>
+      </table>
+
+      <div class="paragraf">
+        Demikian surat undangan ini kami sampaikan. Atas perhatian dan kehadiran
+        Bapak/Ibu, kami ucapkan terima kasih.
+      </div>
+
+      <div class="ttd">
+        <div class="jabatan">a.n. Kepala Kantor,</div>
+        <div class="jabatan">Kepala Sub. Bagian Tata Usaha</div>
+
+        <div class="ruang-ttd"></div>
+
+        <div>(................................)</div>
+        <div>Nama Pengirim</div>
+      </div>
+    </div>
+
+    <div style="text-align:center; margin-top:20px;">
+      <form method="POST" action="{{ url_for('kirim_undangan') }}">
+        <input type="hidden" name="kegiatan" value="{{ kegiatan }}">
+        <input type="hidden" name="tempat" value="{{ tempat }}">
+        <input type="hidden" name="tanggal_input" value="{{ tanggal_input }}">
+        <input type="hidden" name="waktu" value="{{ waktu }}">
+        <input type="hidden" name="peserta" value="{{ peserta }}">
+        <button type="submit" class="btn-green">Kirim ke Admin</button>
+      </form>
+    </div>
+  </section>
+  {% endif %}
+
+  <script>
+    function toggleKegiatanLainnya() {
+      const select = document.getElementById("kegiatan");
+      const input = document.getElementById("kegiatan_lainnya");
+      input.style.display = select.value === "Lainnya" ? "block" : "none";
+      input.required = select.value === "Lainnya";
+      if (select.value !== "Lainnya") {
+        input.value = "";
+      }
+    }
+
+    function toggleTempatLainnya() {
+      const select = document.getElementById("tempat");
+      const input = document.getElementById("tempat_lainnya");
+      input.style.display = select.value === "Lainnya" ? "block" : "none";
+      input.required = select.value === "Lainnya";
+      if (select.value !== "Lainnya") {
+        input.value = "";
+      }
+    }
+
+    function togglePesertaLainnya() {
+      const select = document.getElementById("peserta");
+      const input = document.getElementById("peserta_lainnya");
+      input.style.display = select.value === "Lainnya" ? "block" : "none";
+      input.required = select.value === "Lainnya";
+      if (select.value !== "Lainnya") {
+        input.value = "";
+      }
+    }
+  </script>
+
+</body>
+</html>

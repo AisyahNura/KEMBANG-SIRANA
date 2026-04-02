@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login | SIRANA KEMBANG</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+  <div class="auth-container">
+    <h2>Masuk</h2>
+    <p>Silakan login ke sistem</p>
+
+    <form method="POST" action="/login" id="loginForm">
+  <input type="email" name="email" id="email" placeholder="Email" required>
+  <input type="password" name="password" id="password" placeholder="Password" required>
+  <button type="submit">Masuk</button>
+</form>
+
+    <div class="switch">
+      Belum punya akun?
+      <a href="{{ url_for('register') }}">Daftar</a>
+    </div>
+  </div>
+
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

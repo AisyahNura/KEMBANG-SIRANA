@@ -1,0 +1,729 @@
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #eaf7ef;
+  color: #222;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+a {
+  text-decoration: none;
+}
+
+/* Navbar */
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 40px;
+  background: white;
+  border-bottom: 1px solid #dbe7df;
+}
+
+.logo h3 {
+  margin: 0;
+  font-size: 20px;
+  color: #111;
+}
+
+.logo small {
+  display: block;
+  margin-top: 4px;
+  color: #555;
+  font-size: 14px;
+}
+
+.nav-action a {
+  margin-left: 15px;
+  color: #2c7a4b;
+}
+
+.nav-action .btn {
+  background: #2c7a4b;
+  color: white;
+  padding: 8px 14px;
+  border-radius: 6px;
+}
+
+
+.features {
+  display: flex;
+  justify-content: center;
+  gap: 18px;
+  padding: 0 20px 20px;
+  flex-wrap: nowrap;
+}
+
+.card {
+  background: white;
+  padding: 18px;
+  width: 250px;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.feature-card {
+  text-align: center;
+  transition: 0.2s;
+}
+
+.feature-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 10px 20px rgba(0,0,0,0.08);
+}
+
+.feature-icon {
+  font-size: 30px;
+  margin-bottom: 8px;
+}
+
+/* Auth */
+.auth-container {
+  width: 350px;
+  margin: 80px auto;
+  background: white;
+  padding: 30px;
+  border-radius: 10px;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+.auth-container h2 {
+  margin-bottom: 5px;
+}
+
+.auth-container p {
+  color: #666;
+  font-size: 14px;
+}
+
+.auth-container input {
+  width: 100%;
+  padding: 10px;
+  margin-top: 15px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  box-sizing: border-box;
+}
+
+.auth-container button {
+  width: 100%;
+  margin-top: 20px;
+  padding: 10px;
+  background: #2c7a4b;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.auth-container button:hover {
+  background: #256a40;
+}
+
+.switch {
+  margin-top: 15px;
+  font-size: 14px;
+}
+
+.switch a {
+  color: #2c7a4b;
+}
+
+/* Navbar secondary */
+.nav-right {
+  display: flex;
+  align-items: center;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  color: #2c7a4b;
+  padding: 8px 12px;
+  border-radius: 8px;
+}
+
+.nav-item:hover {
+  background: #dff5e7;
+}
+
+.icon {
+  font-size: 18px;
+}
+
+.nav-text {
+  font-size: 14px;
+}
+
+/* Dashboard */
+.dashboard-header {
+  padding: 35px 40px;
+  background: #dff5e7;
+}
+
+.dashboard-header h2 {
+  margin: 0 0 10px;
+  font-size: 24px;
+}
+
+.dashboard-header p {
+  margin: 0;
+  color: #333;
+  font-size: 16px;
+}
+
+.dashboard-cards {
+  padding: 20px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.big-card {
+  padding: 25px;
+  border-radius: 12px;
+  margin-bottom: 0;
+  color: white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.dark-green {
+  background: #0a7a2d;
+}
+
+.light-green {
+  background: #27b80f;
+}
+
+.big-card h3 {
+  margin-top: 0;
+  margin-bottom: 10px;
+  font-size: 20px;
+}
+
+.big-card p {
+  margin-top: 0;
+  margin-bottom: 18px;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.big-card button {
+  margin-top: 10px;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  background: white;
+  color: #2c7a4b;
+  font-weight: bold;
+}
+
+.big-card button:hover {
+  background: #f2f2f2;
+}
+
+.list-section {
+  padding: 10px 40px 20px;
+}
+
+.list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.list-header h3 {
+  margin: 0;
+  font-size: 22px;
+}
+
+.list-header a {
+  color: #2c7a4b;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.list-item {
+  background: #f4fbf5;
+  padding: 16px 18px;
+  border-radius: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  border: 1px solid #d5eadb;
+}
+
+.list-item strong {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 17px;
+}
+
+.list-item p {
+  margin: 0;
+  color: #555;
+  font-size: 14px;
+}
+
+.small-btn {
+  background: #2c7a4b;
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.small-btn:hover {
+  background: #256a40;
+}
+
+.doc-icon {
+  font-size: 20px;
+}
+
+/* Form */
+.form-section {
+  padding: 40px;
+}
+
+.form-card {
+  background: white;
+  max-width: 850px;
+  margin: 0 auto;
+  padding: 30px;
+  border-radius: 14px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+  border: 1px solid #dbe7df;
+}
+
+.form-card h3 {
+  margin-top: 0;
+  margin-bottom: 22px;
+  font-size: 22px;
+  color: #1f2937;
+}
+
+.form-section label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: #2a2a2a;
+}
+
+.form-section input {
+  width: 100%;
+  padding: 12px 14px;
+  margin-bottom: 18px;
+  border-radius: 8px;
+  border: 1px solid #cfd8d3;
+  background: #fff;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+
+.form-section input:focus {
+  outline: none;
+  border-color: #2c7a4b;
+  box-shadow: 0 0 0 3px rgba(44, 122, 75, 0.12);
+}
+
+.row {
+  display: flex;
+  gap: 10px;
+}
+
+.row input {
+  flex: 1;
+}
+
+.input-group {
+  flex: 1;
+}
+
+.btn-green {
+  background: #2c7a4b;
+  color: white;
+  padding: 12px 18px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.btn-green:hover {
+  background: #256a40;
+}
+
+.preview {
+  padding: 40px;
+}
+
+.hidden {
+  display: none;
+}
+
+.preview-card {
+  max-width: 850px;
+  margin: 0 auto;
+}
+
+.preview-header {
+  margin-bottom: 16px;
+}
+
+.preview-header h3 {
+  margin: 0 0 6px;
+  font-size: 22px;
+  color: #1f2937;
+}
+
+.preview-header p {
+  margin: 0;
+  color: #666;
+  font-size: 14px;
+}
+
+.template-box {
+  background: #fff;
+  padding: 32px;
+  border-radius: 12px;
+  border: 1px solid #d6d6d6;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  font-family: "Times New Roman", serif;
+  line-height: 1.6;
+}
+.hero {
+  position: relative;
+  height: 100vh;
+  background-image: url("../images/Masjid-Agung.jpg");
+  background-size: cover;
+  background-position: center top;
+  background-repeat: no-repeat;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 30px 20px;
+  box-sizing: border-box;
+  color: white;
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.hero-content {
+  position: relative;
+  z-index: 2;
+  max-width: 900px;
+}
+
+.badge {
+  display: inline-block;
+  background: rgba(193, 232, 206, 0.9);
+  color: #1e3a2f;
+  padding: 8px 18px;
+  border-radius: 999px;
+  margin-bottom: 18px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.hero h1 {
+  font-size: 72px;
+  font-weight: 800;
+  margin: 0 0 18px;
+  line-height: 1.1;
+  letter-spacing: 1px;
+  color: white;
+}
+
+.hero-desc {
+  font-size: 20px;
+  margin: 0 auto 28px;
+  color: #f1f1f1;
+  max-width: 760px;
+  line-height: 1.6;
+}
+
+.hero-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.hero-btn {
+  display: inline-block;
+  padding: 12px 28px;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 16px;
+  text-decoration: none;
+  transition: 0.25s ease;
+}
+
+.hero-btn.primary {
+  background: #2c7a4b;
+  color: white;
+}
+
+.hero-btn.primary:hover {
+  background: #256a40;
+}
+
+.hero-btn.secondary {
+  background: rgba(255, 255, 255, 0.9);
+  color: #1f2937;
+}
+
+.hero-btn.secondary:hover {
+  background: white;
+}
+
+@media (max-width: 768px) {
+  .hero {
+    height: auto;
+    padding: 90px 20px 60px;
+  }
+
+  .hero h1 {
+    font-size: 42px;
+  }
+
+  .hero-desc {
+    font-size: 16px;
+  }
+
+  .hero-btn {
+    width: 100%;
+    max-width: 220px;
+  }
+}
+
+/* =========================
+   BUAT UNDANGAN
+========================= */
+
+.surat-wrap {
+  max-width: 900px;
+  margin: 30px auto;
+}
+
+.lembar-surat {
+  background: #fff;
+  color: #000;
+  width: 794px;
+  min-height: 1123px;
+  margin: 0 auto;
+  padding: 30px 42px 40px 42px;
+  box-sizing: border-box;
+  font-family: "Times New Roman", serif;
+  font-size: 14pt;
+  line-height: 1.5;
+  box-shadow: 0 2px 14px rgba(0, 0, 0, 0.12);
+}
+
+.kop-surat {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 8px;
+}
+
+.kop-logo {
+  width: 150px;
+  flex-shrink: 0;
+}
+
+.kop-logo img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.kop-text {
+  flex: 1;
+  text-align: center;
+}
+
+.kop-text .baris-1 {
+  font-size: 15pt;
+  font-weight: bold;
+  margin: 0;
+}
+
+.kop-text .baris-2 {
+  font-size: 14pt;
+  font-weight: bold;
+  margin: 0;
+}
+
+.kop-text .baris-3,
+.kop-text .baris-4,
+.kop-text .baris-5 {
+  font-size: 11pt;
+  margin: 1px 0;
+}
+
+.garis-tebal {
+  border-top: 2px solid #000;
+  margin-top: 8px;
+}
+
+.garis-tipis {
+  border-top: 1px solid #000;
+  margin-top: 2px;
+  margin-bottom: 24px;
+}
+
+.meta-surat {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 24px;
+}
+
+.meta-surat td {
+  vertical-align: top;
+  padding: 2px 0;
+  font-size: 13pt;
+}
+
+.meta-label {
+  width: 90px;
+}
+
+.meta-sep {
+  width: 14px;
+  text-align: center;
+}
+
+.meta-tanggal {
+  text-align: right;
+  white-space: nowrap;
+  padding-left: 20px;
+}
+
+.tujuan {
+  margin-bottom: 22px;
+  font-size: 13pt;
+}
+
+.tujuan div {
+  margin: 0;
+}
+
+.paragraf {
+  text-align: justify;
+  text-indent: 40px;
+  margin-bottom: 16px;
+  font-size: 13pt;
+}
+
+.detail-rapat {
+  border-collapse: collapse;
+  margin-left: 55px;
+  margin-top: 8px;
+  margin-bottom: 22px;
+  font-size: 13pt;
+}
+
+.detail-rapat td {
+  padding: 3px 0;
+  vertical-align: top;
+}
+
+.detail-label {
+  width: 130px;
+}
+
+.detail-sep {
+  width: 16px;
+  text-align: center;
+}
+
+.ttd {
+  width: 280px;
+  margin-left: auto;
+  margin-top: 40px;
+  text-align: center;
+  font-size: 13pt;
+}
+
+.ttd .jabatan {
+  text-align: left;
+  margin: 0;
+}
+
+.ruang-ttd {
+  height: 80px;
+}
+
+.form-section select {
+  width: 100%;
+  padding: 12px 14px;
+  margin-bottom: 18px;
+  border-radius: 8px;
+  border: 1px solid #cfd8d3;
+  background: #fff;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+
+.form-section select:focus {
+  outline: none;
+  border-color: #2c7a4b;
+  box-shadow: 0 0 0 3px rgba(44, 122, 75, 0.12);
+}
+
+.extra-input {
+  display: none;
+  margin-top: -8px;
+  margin-bottom: 18px;
+}
+
+.kirim-admin-wrap {
+  text-align: center;
+  margin-top: 20px;
+}
+
+@media (max-width: 900px) {
+  .lembar-surat {
+    width: 100%;
+    min-height: auto;
+    padding: 24px;
+  }
+
+  .kop-surat {
+    flex-direction: column;
+  }
+
+  .kop-logo {
+    width: 80px;
+  }
+
+  .meta-tanggal {
+    text-align: left;
+    padding-left: 0;
+  }
+
+  .detail-rapat {
+    margin-left: 0;
+  }
+
+  .ttd {
+    width: 100%;
+  }
+}
