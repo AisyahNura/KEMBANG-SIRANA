@@ -11,14 +11,18 @@
   <div class="admin-container">
     <aside class="sidebar">
       <div>
-        <h1 class="logo">SIRANA<br>KEMBANG</h1>
-        <p class="admin-text">Admin Panel</p>
+        <div class="sidebar-brand">
+          <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Logo Kemenag">
+          <h2>SIRANA KEMBANG</h2>
+          <p>Admin Panel</p>
+        </div>
 
-        <nav>
-          <a href="{{ url_for('admin_dashboard') }}">Dashboard</a>
-          <a href="{{ url_for('admin_approval') }}">ACC Undangan</a>
-          <a href="{{ url_for('admin_monitoring') }}" class="active">Monitoring</a>
-        </nav>
+        <ul class="sidebar-menu">
+          <li><a href="{{ url_for('admin_dashboard') }}">Dashboard</a></li>
+          <li><a href="{{ url_for('admin_approval') }}">Persetujuan Undangan</a></li>
+          <li><a href="{{ url_for('admin_monitoring') }}" class="active">Monitoring</a></li>
+            <li><a href="{{ url_for('admin_penerima') }}">Kelola Penerima</a></li>
+        </ul>
       </div>
 
       <div class="sidebar-bottom">
@@ -31,13 +35,13 @@
         <h1>Monitoring Aktivitas</h1>
 
         <div class="header-actions">
-          <select class="filter-select">
+          <select class="filter-select" disabled>
             <option>Semua Aktivitas</option>
             <option>Undangan</option>
             <option>Notulensi</option>
           </select>
 
-          <button class="export-btn">Export ↓</button>
+          <button class="export-btn" type="button">Export ↓</button>
         </div>
       </div>
 
@@ -52,35 +56,36 @@
             </tr>
           </thead>
           <tbody>
-            <tr>
-              <td>Doni Prakoso</td>
-              <td><span class="badge notulensi">Notulensi</span></td>
-              <td>Rapat Koordinasi Bulanan</td>
-              <td>2024-12-09</td>
-            </tr>
-            <tr>
-              <td>Citra Dewi</td>
-              <td><span class="badge notulensi">Notulensi</span></td>
-              <td>Rapat Olimpiade Madrasah</td>
-              <td>2024-11-27</td>
-            </tr>
-            <tr>
-              <td>Ani Widya</td>
-              <td><span class="badge undangan">Undangan</span></td>
-              <td>Undangan Revitalisasi BKM</td>
-              <td>2024-11-09</td>
-            </tr>
-            <tr>
-              <td>Budi Santoso</td>
-              <td><span class="badge undangan">Undangan</span></td>
-              <td>Sosialisasi Kebijakan Baru</td>
-              <td>2024-10-09</td>
-            </tr>
+            {% for item in aktivitas %}
+              <tr>
+                <td>{{ item.pembuat or '-' }}</td>
+                <td>
+                  {% if item.aktivitas == 'Notulensi' %}
+                    <span class="badge notulensi">Notulensi</span>
+                  {% else %}
+                    <span class="badge undangan">Undangan</span>
+                  {% endif %}
+                </td>
+                <td>{{ item.judul }}</td>
+                <td>
+                  {% if item.tanggal %}
+                    {{ item.tanggal }}
+                  {% else %}
+                    -
+                  {% endif %}
+                </td>
+              </tr>
+            {% else %}
+              <tr>
+                <td colspan="4" style="text-align:center;">Belum ada aktivitas.</td>
+              </tr>
+            {% endfor %}
           </tbody>
         </table>
       </section>
     </main>
   </div>
-<script src="{{ url_for('static', filename='js/admin.js') }}"></script>
+
+  <script src="{{ url_for('static', filename='js/admin.js') }}"></script>
 </body>
 </html>

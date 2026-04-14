@@ -6,12 +6,15 @@
   <title>Dashboard | SIRANA KEMBANG</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
-<body>
+<body class="dashboard-page">
 
-  <nav class="navbar">
+  <nav class="navbar dashboard-navbar">
     <div class="logo">
-      <h3>SIRANA KEMBANG</h3>
-      <small>Sistem Informasi Rapat dan Agenda</small>
+      <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Logo">
+      <div class="logo-text">
+        <h3>SIRANA KEMBANG</h3>
+        <small>Sistem Informasi Rapat dan Agenda</small>
+      </div>
     </div>
 
     <div class="nav-right">
@@ -22,73 +25,119 @@
     </div>
   </nav>
 
-  <section class="dashboard-header">
-    <h2>Dashboard</h2>
-    <p>Selamat datang di Sistem Informasi Rapat dan Agenda Kemenag Jombang</p>
+  <section class="dashboard-header modern-header">
+    <div class="header-copy">
+      <span class="section-badge">Dashboard Utama</span>
+      <h2>Kelola Agenda dan Notulensi dengan Lebih Mudah</h2>
+      <p>Selamat datang di Sistem Informasi Rapat dan Agenda Kemenag Jombang.</p>
+    </div>
   </section>
 
-  <section class="dashboard-cards">
-    <div class="big-card dark-green">
-      <h3>📩 Buat Undangan Rapat</h3>
-      <p>Membuat undangan rapat resmi dengan template Kemenag</p>
+  <section class="dashboard-cards modern-dashboard-cards">
+    <div class="big-card dark-green card-feature">
+      <div class="card-feature-top">
+        <span class="feature-pill">Fitur Utama</span>
+        <span class="feature-icon-box">📩</span>
+      </div>
+      <h3>Buat Undangan Rapat</h3>
+      <p>Membuat undangan rapat resmi dengan template Kemenag yang lebih cepat, rapi, dan siap diproses.</p>
       <button onclick="window.location.href='{{ url_for('buat_undangan') }}'">
         + Undangan Baru
       </button>
     </div>
 
-    <div class="big-card light-green">
-      <h3>🎙️ Notulensi Otomatis</h3>
-      <p>Ubah rekaman rapat menjadi notulensi otomatis</p>
+    <div class="big-card light-green card-feature">
+      <div class="card-feature-top">
+        <span class="feature-pill">Fitur Utama</span>
+        <span class="feature-icon-box">🎙️</span>
+      </div>
+      <h3>Notulensi Otomatis</h3>
+      <p>Ubah rekaman rapat menjadi notulensi otomatis agar dokumentasi rapat lebih cepat dan terstruktur.</p>
       <button onclick="window.location.href='{{ url_for('notulensi') }}'">
         + Notulensi Baru
       </button>
     </div>
   </section>
 
-  <section class="list-section">
+  <section class="list-section modern-list-section">
     <div class="list-header">
-      <h3>Undangan Terakhir</h3>
+      <div>
+        <span class="section-badge">Riwayat</span>
+        <h3>Undangan Terakhir</h3>
+      </div>
       <a href="{{ url_for('riwayat_undangan') }}">Lihat semua</a>
     </div>
 
-    <div class="list-item">
-      <div>
-        <strong>Rapat Koordinasi Bulanan</strong>
-        <p>2025-11-15 • 09.00 • Aula Darul Hikmah</p>
-      </div>
-      <button class="small-btn">Selengkapnya</button>
-    </div>
+    {% if undangan_terakhir %}
+      <div class="list-group">
+        {% for u in undangan_terakhir %}
+        <div class="list-item modern-item">
+          <div class="list-item-left">
+            <div class="item-icon-circle">📨</div>
+            <div>
+              <strong>{{ u.kegiatan }}</strong>
+              <p>{{ u.tanggal }} • {{ u.waktu }} • {{ u.tempat }}</p>
+            </div>
+          </div>
 
-    <div class="list-item">
-      <div>
-        <strong>Rapat Olimpiade Madrasah Indonesia</strong>
-        <p>2025-11-25 • 08.00 • Aula PLHUT</p>
+          {% if u.status == 'approved' %}
+            <button class="small-btn" onclick="window.location.href=`{{ url_for('preview_undangan_user', id=u.id) }}`">
+              Selengkapnya
+            </button>
+          {% else %}
+            <button class="small-btn" disabled>{{ u.status }}</button>
+          {% endif %}
+        </div>
+        {% endfor %}
       </div>
-      <button class="small-btn">Selengkapnya</button>
-    </div>
+    {% else %}
+      <div class="list-item modern-item empty-state">
+        <div class="list-item-left">
+          <div class="item-icon-circle">📭</div>
+          <div>
+            <strong>Belum ada undangan</strong>
+            <p>Silakan buat undangan baru.</p>
+          </div>
+        </div>
+      </div>
+    {% endif %}
   </section>
 
-  <section class="list-section">
+  <section class="list-section modern-list-section">
     <div class="list-header">
-      <h3>Notulensi Terakhir</h3>
+      <div>
+        <span class="section-badge">Riwayat</span>
+        <h3>Notulensi Terakhir</h3>
+      </div>
       <a href="#">Lihat semua</a>
     </div>
 
-    <div class="list-item">
-      <div>
-        <strong>Revitalisasi BKM</strong>
-        <p>2025-11-25 • 08.00 • Hotel Fatma Jombang</p>
+    {% if notulensi_terakhir %}
+      <div class="list-group">
+        {% for n in notulensi_terakhir %}
+        <div class="list-item modern-item">
+          <div class="list-item-left">
+            <div class="item-icon-circle">📝</div>
+            <div>
+              <strong>{{ n.kegiatan }}</strong>
+              <p>{{ n.waktu }} • {{ n.tempat }}</p>
+            </div>
+          </div>
+          <span class="doc-icon modern-doc-icon">📄</span>
+        </div>
+        {% endfor %}
       </div>
-      <span class="doc-icon">📄</span>
-    </div>
-
-    <div class="list-item">
-      <div>
-        <strong>Rapat Monev</strong>
-        <p>2025-09-20 • 08.00 • Aula PLHUT</p>
+    {% else %}
+      <div class="list-item modern-item empty-state">
+        <div class="list-item-left">
+          <div class="item-icon-circle">🗒️</div>
+          <div>
+            <strong>Belum ada notulensi</strong>
+            <p>Silakan buat notulensi baru.</p>
+          </div>
+        </div>
       </div>
-      <span class="doc-icon">📄</span>
-    </div>
+    {% endif %}
   </section>
 
   <script src="{{ url_for('static', filename='js/main.js') }}"></script>

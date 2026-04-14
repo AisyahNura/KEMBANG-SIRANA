@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ACC Undangan | SIRANA KEMBANG</title>
+  <title>Persetujuan Undangan | SIRANA KEMBANG</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
 </head>
 <body>
@@ -11,14 +11,18 @@
   <div class="admin-container">
     <aside class="sidebar">
       <div>
-        <h1 class="logo">SIRANA<br>KEMBANG</h1>
-        <p class="admin-text">Admin Panel</p>
+        <div class="sidebar-brand">
+          <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Logo Kemenag">
+          <h2>SIRANA KEMBANG</h2>
+          <p>Admin Panel</p>
+        </div>
 
-        <nav>
-          <a href="{{ url_for('admin_dashboard') }}">Dashboard</a>
-          <a href="{{ url_for('admin_approval') }}" class="active">ACC Undangan</a>
-          <a href="{{ url_for('admin_monitoring') }}">Monitoring</a>
-        </nav>
+        <ul class="sidebar-menu">
+          <li><a href="{{ url_for('admin_dashboard') }}">Dashboard</a></li>
+          <li><a href="{{ url_for('admin_approval') }}" class="active">Persetujuan Undangan</a></li>
+          <li><a href="{{ url_for('admin_monitoring') }}">Monitoring</a></li>
+            <li><a href="{{ url_for('admin_penerima') }}">Kelola Penerima</a></li>
+        </ul>
       </div>
 
       <div class="sidebar-bottom">
@@ -28,8 +32,13 @@
 
     <main class="main-content">
       <div class="header-row">
-        <h1>ACC Undangan</h1>
-        <input type="text" class="search-box" placeholder="Cari Undangan...">
+        <h1>Persetujuan Undangan</h1>
+        <input
+          type="text"
+          id="searchUndangan"
+          class="search-box"
+          placeholder="Cari kegiatan, pembuat, tempat, peserta..."
+        >
       </div>
 
       <section class="table-section">
@@ -38,72 +47,148 @@
         <table>
           <thead>
             <tr>
-              <th>Judul</th>
+              <th>No</th>
+              <th>Kegiatan</th>
               <th>Pembuat</th>
-              <th>Tanggal dibuat</th>
+              <th>Tanggal</th>
+              <th>Waktu</th>
+              <th>Tempat</th>
+              <th>Peserta</th>
               <th>Status</th>
               <th>Aksi</th>
             </tr>
           </thead>
-          <tbody>
-            <tr>
-              <td>Rapat Koordinasi Bulanan</td>
-              <td>Budi Santoso</td>
-              <td>2024-12-08</td>
-              <td><span class="badge pending">Pending</span></td>
-              <td class="action">👁️ ✔️ ❌</td>
-            </tr>
-            <tr>
-              <td>Rapat Olimpiade Madrasah</td>
-              <td>Ani Widya</td>
-              <td>2024-12-07</td>
-              <td><span class="badge pending">Pending</span></td>
-              <td class="action">👁️ ✔️ ❌</td>
-            </tr>
-            <tr>
-              <td>Undangan Revitalisasi BKM</td>
-              <td>Citra Dewi</td>
-              <td>2024-12-09</td>
-              <td><span class="badge pending">Pending</span></td>
-              <td class="action">👁️ ✔️ ❌</td>
-            </tr>
+          <tbody id="pendingTableBody">
+            {% if pending_undangan %}
+              {% for undangan in pending_undangan %}
+              <tr class="undangan-row">
+                <td>{{ loop.index }}</td>
+                <td>{{ undangan.kegiatan }}</td>
+                <td>{{ undangan.pembuat }}</td>
+                <td>{{ undangan.tanggal }}</td>
+                <td>{{ undangan.waktu }}</td>
+                <td>{{ undangan.tempat }}</td>
+                <td>{{ undangan.peserta }}</td>
+                <td><span class="badge pending">Pending</span></td>
+                <td>
+                  <div class="action-group">
+  <!-- tombol lihat -->
+  <a class="action-btn view-btn" href="{{ url_for('lihat_undangan_admin', id=undangan.id) }}">Lihat</a>
+
+  <!-- dropdown -->
+  <div class="dropdown">
+    <button class="action-btn dropdown-btn">Aksi ▾</button>
+
+    <div class="dropdown-menu">
+      <form action="{{ url_for('setujui_undangan', id=undangan.id) }}" method="POST">
+        <button type="submit" class="dropdown-item approve">Setujui</button>
+      </form>
+
+      <form action="{{ url_for('tolak_undangan', id=undangan.id) }}" method="POST">
+        <input type="hidden" name="catatan_admin" value="Ditolak admin">
+        <button type="submit" class="dropdown-item reject">Tolak</button>
+      </form>
+    </div>
+  </div>
+</div>
+                </td>
+              </tr>
+              {% endfor %}
+            {% else %}
+              <tr id="pendingEmptyRow">
+                <td colspan="9">Belum ada undangan yang menunggu persetujuan.</td>
+              </tr>
+            {% endif %}
           </tbody>
         </table>
       </section>
 
       <section class="table-section">
-        <div class="section-title approved-title">Sudah disetujui</div>
+        <div class="section-title approved-title">Sudah Disetujui</div>
 
         <table>
           <thead>
             <tr>
-              <th>Judul</th>
+              <th>No</th>
+              <th>Kegiatan</th>
               <th>Pembuat</th>
-              <th>Tanggal dibuat</th>
+              <th>Tanggal</th>
+              <th>Waktu</th>
+              <th>Tempat</th>
+              <th>Peserta</th>
               <th>Status</th>
               <th>Aksi</th>
             </tr>
           </thead>
-          <tbody>
-            <tr>
-              <td>Rapat Evaluasi</td>
-              <td>Doni Prakoso</td>
-              <td>2024-12-06</td>
-              <td><span class="badge approved">Approved</span></td>
-              <td class="action">👁️ ▶️</td>
-            </tr>
-            <tr>
-              <td>Seminar Nasional</td>
-              <td>Eko Wijaya</td>
-              <td>2024-12-06</td>
-              <td><span class="badge approved">Approved</span></td>
-              <td class="action">👁️ ▶️</td>
-            </tr>
+          <tbody id="approvedTableBody">
+            {% if approved_undangan %}
+              {% for undangan in approved_undangan %}
+              <tr class="undangan-row">
+                <td>{{ loop.index }}</td>
+                <td>{{ undangan.kegiatan }}</td>
+                <td>{{ undangan.pembuat }}</td>
+                <td>{{ undangan.tanggal }}</td>
+                <td>{{ undangan.waktu }}</td>
+                <td>{{ undangan.tempat }}</td>
+                <td>{{ undangan.peserta }}</td>
+                <td><span class="badge approved">Approved</span></td>
+                <td>
+                  <div class="action-group">
+                    <a class="action-btn view-btn" href="{{ url_for('lihat_undangan_admin', id=undangan.id) }}">Lihat</a>
+                  </div>
+                </td>
+              </tr>
+              {% endfor %}
+            {% else %}
+              <tr id="approvedEmptyRow">
+                <td colspan="9">Belum ada undangan yang disetujui.</td>
+              </tr>
+            {% endif %}
           </tbody>
         </table>
       </section>
     </main>
   </div>
-<script src="{{ url_for('static', filename='js/admin.js') }}"></script>
+
+  <script>
+    const searchInput = document.getElementById("searchUndangan");
+    const allRows = document.querySelectorAll(".undangan-row");
+
+    searchInput.addEventListener("keyup", function () {
+      const keyword = this.value.toLowerCase().trim();
+
+      allRows.forEach(function (row) {
+        const rowText = row.innerText.toLowerCase();
+        row.style.display = rowText.includes(keyword) ? "" : "none";
+      });
+    });
+
+  document.querySelectorAll('.dropdown-btn').forEach(btn => {
+    btn.addEventListener('click', function (e) {
+      e.stopPropagation();
+
+      // tutup semua dropdown lain
+      document.querySelectorAll('.dropdown-menu').forEach(menu => {
+        if (menu !== this.nextElementSibling) {
+          menu.style.display = 'none';
+        }
+      });
+
+      // toggle dropdown
+      const menu = this.nextElementSibling;
+      menu.style.display = menu.style.display === 'flex' ? 'none' : 'flex';
+    });
+  });
+
+  // klik luar → tutup dropdown
+  document.addEventListener('click', function () {
+    document.querySelectorAll('.dropdown-menu').forEach(menu => {
+      menu.style.display = 'none';
+    });
+  });
+
+  </script>
+
+  <script src="{{ url_for('static', filename='js/admin.js') }}"></script>
 </body>
 </html>

@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Edit Undangan | SIRANA KEMBANG</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+  <nav class="navbar">
+    <div class="logo">
+      <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Logo">
+      <div class="logo-text">
+        <h3>SIRANA KEMBANG</h3>
+        <small>Sistem Informasi Rapat dan Agenda</small>
+      </div>
+    </div>
+
+    <div class="nav-right">
+      <a href="{{ url_for('riwayat_undangan') }}" class="nav-item">
+        <span class="icon">⬅️</span>
+        <span class="nav-text">Kembali ke Riwayat</span>
+      </a>
+    </div>
+  </nav>
+
+  <section class="dashboard-header">
+    <h2>Edit Undangan</h2>
+    <p>Perbarui detail undangan sebelum dikirimkan ke admin.</p>
+  </section>
+
+  <section class="form-section">
+    <div class="form-card">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, message in messages %}
+            <p>{{ message }}</p>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+
+      <h3>Form Edit Undangan</h3>
+
+      <form method="POST">
+        <label for="kegiatan">Nama Kegiatan</label>
+        <input type="text" id="kegiatan" name="kegiatan" value="{{ undangan.kegiatan }}" required>
+
+        <label for="tempat">Tempat</label>
+        <input type="text" id="tempat" name="tempat" value="{{ undangan.tempat }}" required>
+
+        <div class="row">
+          <div class="input-group">
+            <label for="tanggal">Tanggal</label>
+            <input type="date" id="tanggal" name="tanggal" value="{{ undangan.tanggal }}" required>
+          </div>
+
+          <div class="input-group">
+            <label for="waktu">Waktu</label>
+            <input type="time" id="waktu" name="waktu" value="{{ undangan.waktu }}" required>
+          </div>
+        </div>
+
+        <label for="peserta">Peserta</label>
+        <input type="text" id="peserta" name="peserta" value="{{ undangan.peserta }}" required>
+
+        <button type="submit" class="btn-green">Simpan Perubahan</button>
+      </form>
+    </div>
+  </section>
+
+</body>
+</html>

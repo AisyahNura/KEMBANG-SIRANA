@@ -5,14 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Buat Undangan | SIRANA KEMBANG</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-
 </head>
 <body>
 
   <nav class="navbar">
     <div class="logo">
-      <h3>SIRANA KEMBANG</h3>
-      <small>Sistem Informasi Rapat dan Agenda</small>
+      <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Logo">
+      <div class="logo-text">
+        <h3>SIRANA KEMBANG</h3>
+        <small>Sistem Informasi Rapat dan Agenda</small>
+      </div>
     </div>
 
     <div class="nav-right">
@@ -82,16 +84,15 @@
         </div>
 
         <label for="peserta">Peserta</label>
-        <select id="peserta" name="peserta" required onchange="togglePesertaLainnya()">
-          <option value="">-- Pilih Peserta --</option>
-          <option value="ASN Kemenag">ASN Kemenag</option>
-          <option value="ASN Se-Jombang">ASN Se-Jombang</option>
-          <option value="Kepala KUA">Kepala KUA</option>
-          <option value="Penyuluh">Penyuluh</option>
-          <option value="Pengawas">Pengawas</option>
-          <option value="Madrasah">Madrasah</option>
-          <option value="Lainnya">Lainnya</option>
-        </select>
+<select id="peserta" name="peserta" required onchange="togglePesertaLainnya()">
+  <option value="">-- Pilih Peserta --</option>
+
+  {% for item in kategori_list %}
+    <option value="{{ item.nama_kategori }}">{{ item.nama_kategori }}</option>
+  {% endfor %}
+
+  <option value="Lainnya">Lainnya</option>
+</select>
 
         <input
           type="text"
@@ -100,7 +101,6 @@
           placeholder="Masukkan peserta lainnya"
           style="display:none; margin-top:10px;"
         >
-
         <button type="submit" class="btn-green">Buat Undangan</button>
       </form>
     </div>
@@ -212,9 +212,13 @@
     function toggleKegiatanLainnya() {
       const select = document.getElementById("kegiatan");
       const input = document.getElementById("kegiatan_lainnya");
-      input.style.display = select.value === "Lainnya" ? "block" : "none";
-      input.required = select.value === "Lainnya";
-      if (select.value !== "Lainnya") {
+
+      if (select.value === "Lainnya") {
+        input.style.display = "block";
+        input.required = true;
+      } else {
+        input.style.display = "none";
+        input.required = false;
         input.value = "";
       }
     }
@@ -222,9 +226,13 @@
     function toggleTempatLainnya() {
       const select = document.getElementById("tempat");
       const input = document.getElementById("tempat_lainnya");
-      input.style.display = select.value === "Lainnya" ? "block" : "none";
-      input.required = select.value === "Lainnya";
-      if (select.value !== "Lainnya") {
+
+      if (select.value === "Lainnya") {
+        input.style.display = "block";
+        input.required = true;
+      } else {
+        input.style.display = "none";
+        input.required = false;
         input.value = "";
       }
     }
@@ -232,9 +240,13 @@
     function togglePesertaLainnya() {
       const select = document.getElementById("peserta");
       const input = document.getElementById("peserta_lainnya");
-      input.style.display = select.value === "Lainnya" ? "block" : "none";
-      input.required = select.value === "Lainnya";
-      if (select.value !== "Lainnya") {
+
+      if (select.value === "Lainnya") {
+        input.style.display = "block";
+        input.required = true;
+      } else {
+        input.style.display = "none";
+        input.required = false;
         input.value = "";
       }
     }

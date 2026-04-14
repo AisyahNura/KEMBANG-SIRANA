@@ -10,9 +10,12 @@
 
   <nav class="navbar">
     <div class="logo">
-      <h3>SIRANA KEMBANG</h3>
-      <small>Sistem Informasi Rapat dan Agenda</small>
-    </div>
+  <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Logo">
+  <div class="logo-text">
+    <h3>SIRANA KEMBANG</h3>
+    <small>Sistem Informasi Rapat dan Agenda</small>
+  </div>
+</div>
 
     <div class="nav-right">
       <a href="{{ url_for('user_dashboard') }}" class="nav-item">
@@ -64,7 +67,7 @@
               {% if u.status == 'approved' %}
                 <a href="{{ url_for('preview_undangan_user', id=u.id) }}">Lihat</a>
               {% elif u.status == 'pending' %}
-                Menunggu Persetujuan
+                <a href="{{ url_for('edit_undangan', id=u.id) }}">Edit</a>
               {% else %}
                 Ditolak
               {% endif %}

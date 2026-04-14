@@ -2,3 +2,12 @@ flask
 mysql-connector-python
 openai-whisper
 pyannote.audio
+python-dotenv
+flask-mail
+xhtml2pdf
+sqlalchemy
+pydub
+torch
+torchaudio
+huggingface-hub
+rouge-score

@@ -10,8 +10,11 @@
 
   <nav class="navbar">
     <div class="logo">
-      <h3>SIRANA KEMBANG</h3>
-      <small>Sistem Informasi Rapat dan Agenda</small>
+      <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Logo">
+      <div class="logo-text">
+        <h3>SIRANA KEMBANG</h3>
+        <small>Sistem Informasi Rapat dan Agenda</small>
+      </div>
     </div>
 
     <div class="nav-right">
@@ -24,20 +27,19 @@
 
   <section class="dashboard-header">
     <h2>Notulensi Otomatis</h2>
-    <p>Lengkapi data rapat dan unggah file audio untuk menghasilkan notulensi secara otomatis.</p>
+    <p>Lengkapi data rapat dan unggah file audio untuk menghasilkan notulensi sesuai kebutuhan.</p>
   </section>
 
   <section class="form-section">
     <div class="form-card">
       <h3>Form Data Notulensi</h3>
 
-      <form method="POST" enctype="multipart/form-data">
-
+      <form method="POST" enctype="multipart/form-data" onsubmit="showLoading()">
         <label for="kegiatan">Nama Kegiatan</label>
-        <input type="text" id="kegiatan" name="kegiatan" placeholder="Masukkan nama kegiatan">
+        <input type="text" id="kegiatan" name="kegiatan" placeholder="Masukkan nama kegiatan" required>
 
         <label for="tempat">Tempat</label>
-        <input type="text" id="tempat" name="tempat" placeholder="Masukkan lokasi kegiatan">
+        <input type="text" id="tempat" name="tempat" placeholder="Masukkan lokasi kegiatan" required>
 
         <label for="peserta">Peserta</label>
         <input type="text" id="peserta" name="peserta" placeholder="Contoh: Kepala Madrasah, Staf TU, dll">
@@ -46,45 +48,120 @@
           <div class="upload-icon">🎙️</div>
           <p><strong>Upload file audio rapat</strong></p>
           <p>Maksimal durasi 60 menit</p>
-          <input type="file" id="audioFile" name="audio" accept=".mp3,.wav,.m4a,audio/*" required>
+          <p class="upload-note">Disarankan durasi optimal 1–15 menit untuk hasil terbaik</p>
+          <input type="file" id="audioFile" name="audio" accept=".mp3,.wav,.m4a,.mp4,audio/*" required>
         </div>
 
-        <button type="submit" class="btn-green">Generate Notulensi</button>
+        <div class="opsi-generate-box">
+          <p class="opsi-title">Pilih hasil yang ingin digenerate</p>
 
+          <label class="opsi-item" for="transkrip">
+            <input type="radio" id="transkrip" name="jenis_proses" value="transkrip" checked>
+            <span>Transkripsi saja</span>
+          </label>
+
+          <label class="opsi-item" for="summary">
+            <input type="radio" id="summary" name="jenis_proses" value="summary">
+            <span>Transkripsi + Summary</span>
+          </label>
+
+          <label class="opsi-item" for="diarization">
+            <input type="radio" id="diarization" name="jenis_proses" value="diarization">
+            <span>Transkripsi + Diarization</span>
+          </label>
+        </div>
+
+        <button type="submit" id="submitBtn" class="btn-green btn-submit-notulensi">
+          Generate Notulensi
+        </button>
+
+        <div id="loadingText" class="loading-text" style="display: none;">
+          <div class="loading-spinner">⏳</div>
+          <div class="loading-content">
+            <strong>Sedang memproses audio, mohon tunggu...</strong>
+            <div class="progress-container">
+              <div id="progressBar" class="progress-bar"></div>
+              <span id="progressText">0%</span>
+            </div>
+            <p id="currentStep">Memuat model...</p>
+          </div>
+        </div>
       </form>
 
       {% if message %}
-      <div style="margin-top:20px; padding:12px; background:#e8f5e9; color:#2e7d32; border-radius:8px;">
+      <div class="message-box">
         {{ message }}
       </div>
       {% endif %}
     </div>
   </section>
 
-  {% if hasil_notulensi %}
+  {% if hasil_notulensi or diarization_text or transkrip_asli or transkrip_bersih or hasil_ringkasan %}
   <section id="hasilNotulensi" class="preview">
     <div class="preview-card">
       <div class="preview-header">
         <h3>Hasil Notulensi</h3>
-        <p>Hasil transkripsi dan ringkasan rapat ditampilkan di bawah ini.</p>
+        <p>Berikut hasil proses notulensi otomatis dari audio rapat.</p>
       </div>
 
-      <div class="template-box" id="resultText">
-        <pre style="white-space: pre-wrap;">{{ hasil_notulensi }}</pre>
+      {% if diarization_text %}
+      <div class="template-box">
+        <h4>Hasil Diarization</h4>
+        <pre>{{ diarization_text }}</pre>
+      </div>
+      {% endif %}
 
-        <!-- ✅ FIX DOWNLOAD -->
+      {% if transkrip_asli %}
+      <div class="template-box">
+        <h4>Transkrip Asli</h4>
+        <pre>{{ transkrip_asli }}</pre>
+      </div>
+      {% endif %}
+
+      {% if transkrip_bersih %}
+      <div class="template-box">
+        <h4>Transkrip Bersih</h4>
+        <pre>{{ transkrip_bersih }}</pre>
+      </div>
+      {% endif %}
+
+      {% if hasil_ringkasan %}
+      <div class="template-box template-ringkasan">
+        <h4>Ringkasan Rapat</h4>
+        <pre>{{ hasil_ringkasan }}</pre>
+      </div>
+      {% endif %}
+
+      {% if hasil_notulensi %}
+      <div class="template-box" id="resultText">
+        <h4>Dokumen Notulensi Lengkap</h4>
+        <pre>{{ hasil_notulensi }}</pre>
+
         {% if file_path %}
-        <a href="{{ url_for('download_notulensi', filename=file_path.split('\\')[-1]) }}"
-           class="btn-green"
-           style="margin-top:15px; display:inline-block;">
+        <a href="{{ url_for('download_notulensi', filename=file_path.split('\\')[-1].split('/')[-1]) }}"
+           class="btn-green download-btn">
            ⬇️ Unduh Notulensi
         </a>
         {% endif %}
-
       </div>
+      {% endif %}
     </div>
   </section>
   {% endif %}
+
+  <script>
+    function showLoading() {
+      const submitBtn = document.getElementById("submitBtn");
+      const loadingText = document.getElementById("loadingText");
+
+      submitBtn.innerText = "Sedang memproses...";
+      submitBtn.disabled = true;
+      submitBtn.style.opacity = "0.7";
+      submitBtn.style.cursor = "not-allowed";
+
+      loadingText.style.display = "block";
+    }
+  </script>
 
 </body>
 </html>

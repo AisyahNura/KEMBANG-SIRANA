@@ -6,27 +6,113 @@
   <title>SIRANA KEMBANG</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
-<body>
+<body class="landing-page official-page">
 
-  <section class="hero">
-  <div class="overlay"></div>
-
-  <div class="hero-content">
-    <span class="badge">Kementerian Agama Kabupaten Jombang</span>
-
-    <h1>SIRANA KEMBANG</h1>
-
-    <p class="hero-desc">
-      Sistem Informasi Rapat dan Agenda untuk pembuatan undangan digital
-      dan notulensi otomatis yang lebih rapi dan terorganisir.
-    </p>
-
-    <div class="hero-buttons">
-      <a href="{{ url_for('login') }}" class="hero-btn secondary">Masuk</a>
-      <a href="{{ url_for('register') }}" class="hero-btn primary">Daftar</a>
+  <nav class="navbar official-navbar">
+    <div class="logo">
+      <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Logo">
+      <div class="logo-text">
+        <h3>SIRANA KEMBANG</h3>
+        <small>Sistem Informasi Rapat dan Agenda</small>
+      </div>
     </div>
-  </div>
-</section>
+
+    <div class="nav-right">
+      <a href="{{ url_for('login') }}" class="nav-item">Masuk</a>
+      <a href="{{ url_for('register') }}" class="nav-item nav-cta">Daftar</a>
+    </div>
+  </nav>
+
+  <section class="hero official-hero">
+    <div class="overlay"></div>
+
+    <div class="hero-shell official-shell">
+      <div class="hero-grid official-grid">
+        <div class="hero-content left official-content">
+          <span class="badge official-badge">Kementerian Agama Kabupaten Jombang</span>
+
+          <h1>
+            SIRANA KEMBANG
+          </h1>
+
+          <p class="hero-subtitle">
+            Sistem Informasi Rapat dan Agenda
+          </p>
+
+          <p class="hero-desc">
+            Platform digital untuk mendukung pengelolaan undangan rapat,
+            agenda kegiatan, dan notulensi secara lebih tertib, cepat,
+            serta efisien di lingkungan Kementerian Agama Kabupaten Jombang.
+          </p>
+
+          <div class="hero-buttons official-buttons">
+            <a href="{{ url_for('login') }}" class="hero-btn secondary">Masuk</a>
+            <a href="{{ url_for('register') }}" class="hero-btn primary">Daftar</a>
+          </div>
+        </div>
+
+        <div class="hero-visual official-visual">
+          <div class="official-preview-frame">
+            <img src="{{ url_for('static', filename='images/Masjid-Agung.jpg') }}" alt="Kemenag Jombang">
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="intro-section">
+    <div class="intro-container">
+      <div class="intro-card">
+        <h2>Selamat Datang di SIRANA KEMBANG</h2>
+        <p>
+          SIRANA KEMBANG hadir sebagai media pendukung administrasi rapat dan agenda
+          kegiatan agar proses pengelolaan informasi lebih terstruktur, terdokumentasi,
+          dan mudah diakses.
+        </p>
+        <p>
+          Sistem ini membantu pengguna dalam membuat undangan rapat, mengelola agenda,
+          serta menghasilkan notulensi otomatis untuk mendukung efektivitas kerja.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <footer class="official-footer">
+    <div class="footer-container">
+      <div class="footer-top">
+        <div class="footer-brand">
+          <div class="footer-brand-head">
+            <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Logo Kemenag">
+            <div>
+              <h3>SIRANA KEMBANG</h3>
+              <p>Sistem Informasi Rapat dan Agenda</p>
+            </div>
+          </div>
+          <p class="footer-desc">
+            Website resmi pengelolaan rapat dan agenda kegiatan
+            Kementerian Agama Kabupaten Jombang.
+          </p>
+        </div>
+
+        <div class="footer-col">
+          <h4>Navigasi</h4>
+          <a href="{{ url_for('login') }}">Masuk</a>
+          <a href="{{ url_for('register') }}">Daftar</a>
+        </div>
+
+        <div class="footer-col">
+          <h4>Informasi</h4>
+          <p>Kementerian Agama Kabupaten Jombang</p>
+          <p>Jombang, Jawa Timur</p>
+          <p>Layanan administrasi rapat dan agenda</p>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <p>© 2026 SIRANA KEMBANG — Kementerian Agama Kabupaten Jombang. Seluruh hak cipta dilindungi.</p>
+      </div>
+    </div>
+  </footer>
 
 </body>
 </html>

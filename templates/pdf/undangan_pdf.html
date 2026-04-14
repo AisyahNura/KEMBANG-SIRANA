@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            font-family: "Times New Roman", serif;
+            font-size: 13px;
+            line-height: 1.45;
+            margin: 30px 35px;
+            color: #000;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .header-table td,
+        .info-table td,
+        .isi-table td,
+        .ttd-table td {
+            vertical-align: top;
+        }
+
+        .logo {
+            width: 120px;
+            height: auto;
+        }
+
+        .center {
+            text-align: center;
+        }
+
+        .kop-title-1 {
+            font-size: 16px;
+            font-weight: bold;
+            margin: 0;
+        }
+
+        .kop-title-2 {
+            font-size: 16px;
+            font-weight: bold;
+            margin: 0;
+        }
+
+        .kop-text {
+            font-size: 12px;
+            margin: 2px 0;
+        }
+
+        .line {
+            border-top: 2px solid #000;
+            margin-top: 8px;
+        }
+
+        .line2 {
+            border-top: 1px solid #000;
+            margin-top: 2px;
+            margin-bottom: 18px;
+        }
+
+        .info-table td {
+            padding: 2px 0;
+            font-size: 13px;
+        }
+
+        .info-label {
+            width: 70px;
+        }
+
+        .info-sep {
+            width: 10px;
+        }
+
+        .tanggal-kanan {
+            text-align: right;
+        }
+
+        .tujuan {
+            margin-top: 18px;
+            margin-bottom: 14px;
+        }
+
+        .tujuan p {
+            margin: 0;
+        }
+
+        .paragraf {
+            text-align: justify;
+            margin: 0 0 10px 0;
+        }
+
+        .isi-table {
+            margin-top: 6px;
+            margin-bottom: 12px;
+        }
+
+        .isi-table td {
+            padding: 2px 0;
+            font-size: 13px;
+        }
+
+        .isi-label {
+            width: 110px;
+        }
+
+        .isi-sep {
+            width: 10px;
+        }
+
+        .ttd-table {
+            margin-top: 28px;
+        }
+
+        .ttd-kanan {
+            width: 40%;
+            text-align: center;
+        }
+
+        .ttd-kanan p {
+            margin: 0;
+        }
+
+        .spasi-ttd {
+            height: 65px;
+        }
+    </style>
+</head>
+<body>
+
+    <table class="header-table">
+        <tr>
+            <td width="16%">
+                <img src="data:image/png;base64,{{ logo_base64 }}" width="120" alt="Logo">
+            </td>
+            <td width="84%" class="center">
+                <p class="kop-title-1">KEMENTERIAN AGAMA REPUBLIK INDONESIA</p>
+                <p class="kop-title-2">KANTOR KEMENTERIAN AGAMA KABUPATEN JOMBANG</p>
+                <p class="kop-text">Jalan Bupati R. Soedirman Nomor 26 Jombang Kode Pos 61419</p>
+                <p class="kop-text">Telepon (0321) 861321</p>
+                <p class="kop-text">Website: www.jombangkemenag.go.id ; E-mail: kabjombang@kemenag.go.id</p>
+            </td>
+        </tr>
+    </table>
+
+    <div class="line"></div>
+    <div class="line2"></div>
+
+    <table class="info-table">
+        <tr>
+            <td class="info-label">Nomor</td>
+            <td class="info-sep">:</td>
+            <td>{{ undangan.nomor_surat }}</td>
+            <td class="tanggal-kanan">Jombang, {{ undangan.tanggal_surat }}</td>
+        </tr>
+        <tr>
+            <td class="info-label">Sifat</td>
+            <td class="info-sep">:</td>
+            <td>Penting</td>
+            <td></td>
+        </tr>
+        <tr>
+            <td class="info-label">Lampiran</td>
+            <td class="info-sep">:</td>
+            <td>-</td>
+            <td></td>
+        </tr>
+        <tr>
+            <td class="info-label">Hal</td>
+            <td class="info-sep">:</td>
+            <td>{{ undangan.kegiatan }}</td>
+            <td></td>
+        </tr>
+    </table>
+
+    <div class="tujuan">
+        <p>Yth. {{ undangan.peserta }}</p>
+        <p>di Tempat</p>
+    </div>
+
+    <p class="paragraf">
+        Dalam rangka pelaksanaan kegiatan <b>{{ undangan.kegiatan }}</b>, kami mengundang
+        Bapak/Ibu untuk hadir pada kegiatan yang akan dilaksanakan pada:
+    </p>
+
+    <table class="isi-table">
+        <tr>
+            <td class="isi-label">Hari/Tanggal</td>
+            <td class="isi-sep">:</td>
+            <td>{{ undangan.tanggal_acara }}</td>
+        </tr>
+        <tr>
+            <td class="isi-label">Waktu</td>
+            <td class="isi-sep">:</td>
+            <td>{{ undangan.waktu }}</td>
+        </tr>
+        <tr>
+            <td class="isi-label">Tempat</td>
+            <td class="isi-sep">:</td>
+            <td>{{ undangan.tempat }}</td>
+        </tr>
+    </table>
+
+    <p class="paragraf">
+        Demikian surat undangan ini kami sampaikan. Atas perhatian dan kehadiran
+        Bapak/Ibu, kami ucapkan terima kasih.
+    </p>
+
+    <table class="ttd-table">
+        <tr>
+            <td width="60%"></td>
+            <td class="ttd-kanan">
+                <p>a.n. Kepala Kantor,</p>
+                <p>Kepala Sub. Bagian Tata Usaha</p>
+
+                <div class="spasi-ttd"></div>
+
+                <p>(............................)</p>
+                <p>Nama Pengirim</p>
+            </td>
+        </tr>
+    </table>
+
+</body>
+</html>

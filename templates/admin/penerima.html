@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kelola Penerima | SIRANA KEMBANG</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+</head>
+<body>
+
+  <div class="admin-container">
+    <aside class="sidebar">
+      <div>
+        <div class="sidebar-brand">
+          <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Logo Kemenag">
+          <h2>SIRANA KEMBANG</h2>
+          <p>Admin Panel</p>
+        </div>
+
+        <ul class="sidebar-menu">
+          <li><a href="{{ url_for('admin_dashboard') }}">Dashboard</a></li>
+          <li><a href="{{ url_for('admin_approval') }}">Persetujuan Undangan</a></li>
+          <li><a href="{{ url_for('admin_monitoring') }}">Monitoring</a></li>
+          <li><a href="{{ url_for('admin_penerima') }}" class="active">Kelola Penerima</a></li>
+        </ul>
+      </div>
+
+      <div class="sidebar-bottom">
+        <a href="#" class="logout-btn" id="logoutBtn">Logout</a>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <h1>Kelola Penerima Undangan</h1>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, message in messages %}
+            <div class="flash-message {{ category }}">{{ message }}</div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+
+      <!-- TAMBAH KATEGORI -->
+      <section class="table-section" style="margin-bottom: 30px;">
+        <div class="section-title approved-title">Tambah Kategori</div>
+
+        <form action="{{ url_for('tambah_kategori') }}" method="POST" class="form-penerima">
+          <div class="form-row">
+            <input type="text" name="nama_kategori" placeholder="Masukkan nama kategori" required>
+            <button type="submit" class="action-btn view-btn">Tambah Kategori</button>
+          </div>
+        </form>
+      </section>
+
+      <!-- TAMBAH PENERIMA -->
+      <section class="table-section" style="margin-bottom: 30px;">
+        <div class="section-title approved-title">Tambah Penerima</div>
+
+        <form action="{{ url_for('tambah_penerima') }}" method="POST" class="form-penerima">
+          <div class="form-row">
+            <input type="text" name="nama" placeholder="Nama penerima" required>
+            <input type="email" name="email" placeholder="Email penerima" required>
+
+            <select name="kategori_id" required>
+              <option value="">Pilih kategori</option>
+              {% for item in kategori_list %}
+                <option value="{{ item.id }}">{{ item.nama_kategori }}</option>
+              {% endfor %}
+            </select>
+
+            <button type="submit" class="action-btn view-btn">Tambah Penerima</button>
+          </div>
+        </form>
+      </section>
+
+      <!-- DAFTAR PENERIMA -->
+      <section class="table-section">
+        <div class="table-header-filter">
+          <div class="section-title pending-title">Daftar Penerima</div>
+
+          <select id="filterKategori" class="filter-kategori">
+            <option value="">Semua Kategori</option>
+            {% for item in kategori_list %}
+              <option value="{{ item.nama_kategori }}">{{ item.nama_kategori }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <table>
+          <thead>
+            <tr>
+              <th>No</th>
+              <th>Nama</th>
+              <th>Email</th>
+              <th>Kategori</th>
+              <th>Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="tabelPenerima">
+            {% if daftar_penerima %}
+              {% for item in daftar_penerima %}
+              <tr class="penerima-row" data-kategori="{{ item.kategori }}">
+                <td>{{ loop.index }}</td>
+                <td>{{ item.nama }}</td>
+                <td>{{ item.email }}</td>
+                <td>{{ item.kategori }}</td>
+                <td>
+                  <form action="{{ url_for('hapus_penerima', id=item.id) }}" method="POST" onsubmit="return confirm('Yakin hapus data ini?')">
+                    <button type="submit" class="action-btn reject-btn">Hapus</button>
+                  </form>
+                </td>
+              </tr>
+              {% endfor %}
+            {% else %}
+              <tr>
+                <td colspan="5" class="empty-text">Belum ada data penerima.</td>
+              </tr>
+            {% endif %}
+          </tbody>
+        </table>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const filterKategori = document.getElementById("filterKategori");
+    const rows = document.querySelectorAll(".penerima-row");
+
+    if (filterKategori) {
+      filterKategori.addEventListener("change", function () {
+        const selected = this.value.toLowerCase();
+
+        rows.forEach(function (row) {
+          const kategori = (row.getAttribute("data-kategori") || "").toLowerCase();
+
+          if (selected === "" || kategori === selected) {
+            row.style.display = "";
+          } else {
+            row.style.display = "none";
+          }
+        });
+      });
+    }
+  </script>
+
+  <script src="{{ url_for('static', filename='js/admin.js') }}"></script>
+</body>
+</html>

@@ -11,14 +11,18 @@
   <div class="admin-container">
     <aside class="sidebar">
       <div>
-        <h1 class="logo">SIRANA<br>KEMBANG</h1>
-        <p class="admin-text">Admin Panel</p>
+        <div class="sidebar-brand">
+          <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Logo Kemenag">
+          <h2>SIRANA KEMBANG</h2>
+          <p>Admin Panel</p>
+        </div>
 
-        <nav>
-          <a href="{{ url_for('admin_dashboard') }}" class="active">Dashboard</a>
-          <a href="{{ url_for('admin_approval') }}">ACC Undangan</a>
-          <a href="{{ url_for('admin_monitoring') }}">Monitoring</a>
-        </nav>
+        <ul class="sidebar-menu">
+          <li><a href="{{ url_for('admin_dashboard') }}" class="active">Dashboard</a></li>
+          <li><a href="{{ url_for('admin_approval') }}">Persetujuan Undangan</a></li>
+          <li><a href="{{ url_for('admin_monitoring') }}">Monitoring</a></li>
+            <li><a href="{{ url_for('admin_penerima') }}">Kelola Penerima</a></li>
+        </ul>
       </div>
 
       <div class="sidebar-bottom">
@@ -31,58 +35,148 @@
 
       <div class="stats">
         <div class="card blue">
-          <h2>3</h2>
-          <p>Menunggu ACC</p>
+          <h2>{{ total_pending | default(0) }}</h2>
+          <p>Menunggu Persetujuan</p>
         </div>
 
         <div class="card green">
-          <h2>2</h2>
-          <p>Sudah disetujui</p>
+          <h2>{{ total_approved | default(0) }}</h2>
+          <p>Sudah Disetujui</p>
         </div>
 
         <div class="card orange">
-          <h2>5</h2>
+          <h2>{{ total_aktivitas | default(0) }}</h2>
           <p>Total Aktivitas</p>
         </div>
       </div>
 
+      <section class="chart-box">
+        <div class="chart-header">
+          <div>
+            <h3>Statistik Undangan per Bulan</h3>
+            <p>Jumlah undangan yang dibuat selama tahun berjalan</p>
+          </div>
+        </div>
+
+        <div class="mini-stats">
+          <div class="mini-card">
+            <span>Bulan Ini</span>
+            <strong>{{ total_bulan_ini | default(0) }}</strong>
+          </div>
+
+          <div class="mini-card">
+            <span>Bulan Lalu</span>
+            <strong>{{ total_bulan_lalu | default(0) }}</strong>
+          </div>
+        </div>
+
+        <div class="chart-container">
+          <canvas id="undanganChart"></canvas>
+        </div>
+      </section>
+
       <section class="activity-box">
         <h3>Aktivitas Terbaru</h3>
 
-        <div class="activity-item">
-          <div class="icon blue-icon"></div>
-          <div>
-            <strong>Membuat undangan rapat Koordinasi Bulanan</strong>
-            <p>2025-11-15 • 09:00 • Aula Darul Hikmah</p>
-          </div>
-        </div>
+        {% if aktivitas_terbaru is defined and aktivitas_terbaru %}
+          {% for item in aktivitas_terbaru %}
+          <div class="activity-item">
+            <div class="activity-accent
+              {% if item.kegiatan == 'Rapat' %}accent-blue
+              {% elif item.kegiatan == 'Seminar' %}accent-purple
+              {% elif item.kegiatan == 'Workshop' %}accent-orange
+              {% elif item.kegiatan == 'Pelantikan' %}accent-green
+              {% elif item.kegiatan == 'Bimbingan' %}accent-teal
+              {% else %}accent-gray
+              {% endif %}
+            "></div>
 
-        <div class="activity-item">
-          <div class="icon blue-icon"></div>
-          <div>
-            <strong>Membuat undangan rapat Olimpiade Madrasah Indonesia</strong>
-            <p>2025-11-15 • 08:00 • Aula PLHUT</p>
+            <div class="activity-content">
+              <strong>{{ item.kegiatan }}</strong>
+              <p>
+                {{ item.tanggal if item.tanggal else '-' }}
+                •
+                {{ item.waktu if item.waktu else '-' }}
+                •
+                {{ item.tempat if item.tempat else '-' }}
+              </p>
+            </div>
           </div>
-        </div>
-
-        <div class="activity-item">
-          <div class="icon blue-icon"></div>
-          <div>
-            <strong>Membuat undangan Revitalisasi BKM</strong>
-            <p>2025-11-15 • 08:00 • Hotel Fatma Jombang</p>
-          </div>
-        </div>
-
-        <div class="activity-item">
-          <div class="icon purple-icon"></div>
-          <div>
-            <strong>Upload rekaman notulen Seminar Nasional</strong>
-            <p>2025-10-11 • 12:00 • Zoom meeting</p>
-          </div>
-        </div>
+          {% endfor %}
+        {% else %}
+          <p class="empty-text">Belum ada aktivitas.</p>
+        {% endif %}
       </section>
     </main>
   </div>
-<script src="{{ url_for('static', filename='js/admin.js') }}"></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    const labels = {{ (chart_labels if chart_labels is defined else []) | tojson }};
+    const dataBulanan = {{ (chart_data if chart_data is defined else []) | tojson }};
+
+    const canvas = document.getElementById('undanganChart');
+
+    if (canvas) {
+      const ctx = canvas.getContext('2d');
+
+      new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Jumlah Undangan',
+            data: dataBulanan,
+            backgroundColor: '#2f8f4e',
+            borderRadius: 8,
+            barThickness: 36
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              display: false
+            },
+            tooltip: {
+              backgroundColor: '#1f2937',
+              titleColor: '#ffffff',
+              bodyColor: '#ffffff',
+              padding: 10
+            }
+          },
+          scales: {
+            x: {
+              grid: {
+                display: false
+              },
+              ticks: {
+                color: '#4b5563',
+                font: {
+                  size: 13
+                }
+              }
+            },
+            y: {
+              beginAtZero: true,
+              ticks: {
+                stepSize: 1,
+                color: '#4b5563',
+                font: {
+                  size: 13
+                }
+              },
+              grid: {
+                color: '#e5e7eb'
+              }
+            }
+          }
+        }
+      });
+    }
+  </script>
+
+  <script src="{{ url_for('static', filename='js/admin.js') }}"></script>
 </body>
 </html>
