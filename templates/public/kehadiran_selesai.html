@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Konfirmasi Selesai</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <style>
+    body{background:#f4fff7;font-family:Arial,Helvetica,sans-serif}
+    .wrap{max-width:600px;margin:10vh auto;padding:24px;background:#fff;border-radius:8px;text-align:center;box-shadow:0 6px 18px rgba(0,0,0,.06)}
+    .ok{font-size:48px;color:#2e8b57}
+    .msg{margin-top:12px;font-size:16px;color:#333}
+    .note{margin-top:18px;font-size:14px;color:#6b7280}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="ok">✓</div>
+    <div class="msg">{{ message or 'Terima kasih. Konfirmasi Anda telah tersimpan.' }}</div>
+    <div class="note">Anda dapat menutup halaman ini.</div>
+  </div>
+</body>
+</html>

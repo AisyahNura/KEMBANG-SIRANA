@@ -96,7 +96,11 @@
               <p>
                 {{ item.tanggal if item.tanggal else '-' }}
                 •
-                {{ item.waktu if item.waktu else '-' }}
+                {% if item.waktu %}
+                  {{ (item.waktu|string)[:5] }}{% if item.waktu_selesai %} - {{ (item.waktu_selesai|string)[:5] }}{% endif %}
+                {% else %}
+                  -
+                {% endif %}
                 •
                 {{ item.tempat if item.tempat else '-' }}
               </p>

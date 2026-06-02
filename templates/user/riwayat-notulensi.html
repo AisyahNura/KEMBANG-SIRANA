@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Riwayat Notulensi | SIRANA KEMBANG</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+  <nav class="navbar">
+    <div class="logo">
+      <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Logo">
+      <div class="logo-text">
+        <h3>SIRANA KEMBANG</h3>
+        <small>Sistem Informasi Rapat dan Agenda</small>
+      </div>
+    </div>
+
+    <div class="nav-right">
+      <a href="{{ url_for('user_dashboard') }}" class="nav-item">
+        <span class="icon">⬅️</span>
+        <span class="nav-text">Kembali ke Dashboard</span>
+      </a>
+    </div>
+  </nav>
+
+  <section class="dashboard-header">
+    <h2>Riwayat Notulensi</h2>
+    <p>Lihat dan unduh notulensi yang pernah kamu buat.</p>
+  </section>
+
+  <section class="list-section">
+    <div class="list-card">
+      <table border="1" cellpadding="10" cellspacing="0" width="100%">
+        <thead>
+          <tr>
+            <th>No</th>
+            <th>Kegiatan</th>
+            <th>Waktu</th>
+            <th>Tempat</th>
+            <th>Ringkasan</th>
+            <th>Aksi</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for n in data_notulensi %}
+          <tr>
+            <td>{{ loop.index }}</td>
+            <td>{{ n.kegiatan }}</td>
+            <td>{{ n.waktu }}</td>
+            <td>{{ n.tempat }}</td>
+            <td>{{ n.ringkasan or '-' }}</td>
+            <td>
+              {% if n.filename %}
+                <a href="{{ url_for('download_notulensi', filename=n.filename) }}">Unduh</a>
+              {% else %}
+                -
+              {% endif %}
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="6" style="text-align:center;">Belum ada data notulensi.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+</body>
+</html>

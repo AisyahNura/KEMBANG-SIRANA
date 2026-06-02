@@ -2,9 +2,6 @@ from flask import Flask, render_template, request, redirect, url_for, session, f
 import pymysql
 import os
 from werkzeug.utils import secure_filename
-from services.filter_service import clean_transcript
-from services.summary_service import summarize_text
-from services.notulensi_service import generate_notulensi
 from datetime import datetime
 from flask_mail import Mail, Message
 from xhtml2pdf import pisa
@@ -12,8 +9,8 @@ from flask import make_response
 from collections import OrderedDict
 from sqlalchemy import extract
 import base64
-from services.transkripsi_service import transcribe_audio, transcribe_audio_with_segments, transcribe_audio_complete
-from services.diarization_service import diarize_audio, assign_speakers_to_transcript, format_speaker_transcript
+import secrets
+import re
 from datetime import timedelta
 import config
 
@@ -32,16 +29,107 @@ mail = Mail(app)
 # =========================
 # DATABASE
 # =========================
-conn = pymysql.connect(
-    host=config.DB_HOST,
-    user=config.DB_USER,
-    password=config.DB_PASSWORD,
-    database=config.DB_NAME
-)
+class LazyMySQLConnection:
+    def __init__(self):
+        self._conn = None
+
+    def get(self):
+        if self._conn is None:
+            self._conn = pymysql.connect(
+                host=config.DB_HOST,
+                user=config.DB_USER,
+                password=config.DB_PASSWORD,
+                database=config.DB_NAME
+            )
+        else:
+            self._conn.ping(reconnect=True)
+        return self._conn
+
+    def __getattr__(self, name):
+        return getattr(self.get(), name)
+
+
+conn = LazyMySQLConnection()
 
 def get_cursor():
     conn.ping(reconnect=True)
     return conn.cursor(pymysql.cursors.DictCursor)
+
+
+def ensure_undangan_history_table():
+    cursor = get_cursor()
+    try:
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS undangan_history (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                undangan_id INT NOT NULL,
+                field_name VARCHAR(100) NOT NULL,
+                old_value TEXT NULL,
+                new_value TEXT NULL,
+                changed_by INT NOT NULL,
+                changed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                INDEX idx_undangan_history_undangan_id (undangan_id),
+                INDEX idx_undangan_history_changed_by (changed_by),
+                CONSTRAINT fk_undangan_history_undangan
+                    FOREIGN KEY (undangan_id) REFERENCES undangan(id)
+                    ON DELETE CASCADE,
+                CONSTRAINT fk_undangan_history_user
+                    FOREIGN KEY (changed_by) REFERENCES users(id)
+                    ON DELETE RESTRICT
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+        """)
+        conn.commit()
+    except Exception as e:
+        # Keep app startup resilient when DB user lacks schema privileges.
+        print("Gagal memastikan tabel undangan_history:", e)
+
+
+ensure_undangan_history_table()
+
+
+def ensure_kategori_is_active_column():
+    cursor = get_cursor()
+    try:
+        cursor.execute("""
+            ALTER TABLE kategori_undangan
+            ADD COLUMN is_active TINYINT(1) NOT NULL DEFAULT 1
+        """)
+        conn.commit()
+    except pymysql.err.ProgrammingError as e:
+        # Ignore "duplicate column" error and continue app startup.
+        if not (e.args and e.args[0] == 1060):
+            print("Gagal memastikan kolom is_active pada kategori_undangan:", e)
+    except Exception as e:
+        print("Gagal memastikan kolom is_active pada kategori_undangan:", e)
+
+
+def kategori_has_is_active_column():
+    cursor = get_cursor()
+    cursor.execute("SHOW COLUMNS FROM kategori_undangan LIKE 'is_active'")
+    return cursor.fetchone() is not None
+
+
+ensure_kategori_is_active_column()
+
+
+def ensure_undangan_waktu_selesai_column():
+    cursor = get_cursor()
+    try:
+        cursor.execute("""
+            ALTER TABLE undangan
+            ADD COLUMN waktu_selesai TIME NULL AFTER waktu
+        """)
+        conn.commit()
+    except pymysql.err.ProgrammingError as e:
+        # Ignore "duplicate column" error and continue app startup.
+        if not (e.args and e.args[0] == 1060):
+            print("Gagal memastikan kolom waktu_selesai pada undangan:", e)
+    except Exception as e:
+        print("Gagal memastikan kolom waktu_selesai pada undangan:", e)
+
+
+ensure_undangan_waktu_selesai_column()
+
 
 
 
@@ -72,7 +160,13 @@ app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 
 def allowed_file(filename):
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
+def validasi_email(email):
+    pattern = r'^[\w\.-]+@[\w\.-]+\.\w+$'
 
+    if not re.match(pattern, email):
+        return False, "Maaf format email yang dimasukkan tidak valid."
+
+    return True, "Email valid."
 # =========================
 # FORMAT TANGGAL
 # =========================
@@ -97,17 +191,26 @@ def format_tanggal_indo(tanggal_obj):
         hasil = hasil.replace(en, idn)
     return hasil
 
+
+def format_waktu_rentang(waktu_mulai, waktu_selesai=None, with_wib=False):
+    mulai = str(waktu_mulai)[:5] if waktu_mulai else "-"
+    selesai = str(waktu_selesai)[:5] if waktu_selesai else ""
+    label = f"{mulai} - {selesai}" if selesai else mulai
+    return f"{label} WIB" if with_wib else label
+
 # =========================
 # EMAIL UNDANGAN
 # =========================
-def kirim_email_undangan(to_email, kegiatan, tanggal, waktu, tempat, peserta, pdf_path=None):
+def kirim_email_undangan(to_email, kegiatan, tanggal, waktu, tempat, peserta, pdf_path=None, token=None):
     try:
+        confirm_link = f"http://127.0.0.1:5000/kehadiran/{token}" if token else ""
         msg = Message(
             subject=f"Undangan: {kegiatan}",
             recipients=[to_email],
             html=f"""
             <p>Yth. {peserta},</p>
             <p>Terlampir kami kirimkan surat undangan kegiatan <b>{kegiatan}</b>.</p>
+            {f'<p>Silakan konfirmasi kehadiran Anda melalui link berikut: <a href="{confirm_link}">{confirm_link}</a></p>' if confirm_link else ''}
             <p>Terima kasih.</p>
             <p><b>Admin SIRANA KEMBANG</b></p>
             """
@@ -132,7 +235,8 @@ def kirim_email_undangan(to_email, kegiatan, tanggal, waktu, tempat, peserta, pd
 # =========================
 def render_undangan_html(data_undangan, nama_penerima):
     nomor_surat = f"001/UND/KEMENAG/{data_undangan['id']:03d}"
-    tanggal_surat = format_tanggal_indo(datetime.now())
+    tanggal_surat_sumber = data_undangan.get("tanggal_dibuat")
+    tanggal_surat = format_tanggal_indo(tanggal_surat_sumber or datetime.now())
     tanggal_acara = format_tanggal_indo(data_undangan["tanggal"])
 
     return render_template(
@@ -144,7 +248,11 @@ def render_undangan_html(data_undangan, nama_penerima):
             "kegiatan": data_undangan["kegiatan"],
             "peserta": nama_penerima,
             "tanggal_acara": tanggal_acara,
-            "waktu": str(data_undangan["waktu"])[:5] + " WIB",
+            "waktu": format_waktu_rentang(
+                data_undangan["waktu"],
+                data_undangan.get("waktu_selesai"),
+                with_wib=True
+            ),
             "tempat": data_undangan["tempat"]
         }
     )
@@ -222,7 +330,7 @@ def user_dashboard():
     cursor = get_cursor()
 
     cursor.execute("""
-        SELECT id, kegiatan, tanggal, waktu, tempat, status
+        SELECT id, kegiatan, tanggal, waktu, waktu_selesai, tempat, status
         FROM undangan
         WHERE user_id = %s
         ORDER BY tanggal_dibuat DESC
@@ -255,12 +363,22 @@ def buat_undangan():
         return redirect(url_for("login"))
 
     cursor = get_cursor()
-    cursor.execute("""
-        SELECT id, nama_kategori
-        FROM kategori_undangan
-        WHERE nama_kategori IS NOT NULL AND nama_kategori != ''
-        ORDER BY nama_kategori ASC
-    """)
+    if kategori_has_is_active_column():
+        cursor.execute("""
+            SELECT id, nama_kategori
+            FROM kategori_undangan
+            WHERE nama_kategori IS NOT NULL
+              AND nama_kategori != ''
+              AND is_active = 1
+            ORDER BY nama_kategori ASC
+        """)
+    else:
+        cursor.execute("""
+            SELECT id, nama_kategori
+            FROM kategori_undangan
+            WHERE nama_kategori IS NOT NULL AND nama_kategori != ''
+            ORDER BY nama_kategori ASC
+        """)
     kategori_list = cursor.fetchall()
     print("DEBUG kategori_list:", kategori_list)
 
@@ -269,6 +387,7 @@ def buat_undangan():
         tempat = request.form.get("tempat")
         tanggal_input = request.form.get("tanggal")
         waktu = request.form.get("waktu")
+        waktu_selesai = request.form.get("waktu_selesai")
         peserta = request.form.get("peserta")
 
         kegiatan_lainnya = request.form.get("kegiatan_lainnya")
@@ -300,10 +419,12 @@ def buat_undangan():
         }
 
         tanggal_obj = datetime.strptime(tanggal_input, "%Y-%m-%d")
-        tanggal_format = tanggal_obj.strftime("%d %B %Y")
+        tanggal_acara = tanggal_obj.strftime("%d %B %Y")
 
         for en, idn in bulan_indo.items():
-            tanggal_format = tanggal_format.replace(en, idn)
+            tanggal_acara = tanggal_acara.replace(en, idn)
+
+        tanggal_surat = format_tanggal_indo(datetime.now())
 
         nomor_surat = "001/UND/KEMENAG/PREVIEW"
 
@@ -313,8 +434,10 @@ def buat_undangan():
             nomor_surat=nomor_surat,
             kegiatan=kegiatan,
             tempat=tempat,
-            tanggal=tanggal_format,
+            tanggal_surat=tanggal_surat,
+            tanggal_acara=tanggal_acara,
             waktu=waktu,
+            waktu_selesai=waktu_selesai,
             peserta=peserta,
             tanggal_input=tanggal_input,
             kategori_list=kategori_list
@@ -334,13 +457,14 @@ def kirim_undangan():
     tempat = request.form.get("tempat")
     tanggal_input = request.form.get("tanggal_input")
     waktu = request.form.get("waktu")
+    waktu_selesai = request.form.get("waktu_selesai")
     peserta = request.form.get("peserta")
 
     cursor = get_cursor()
     cursor.execute("""
-        INSERT INTO undangan (user_id, kegiatan, tempat, tanggal, waktu, peserta, status, tanggal_dibuat)
-        VALUES (%s, %s, %s, %s, %s, %s, 'pending', NOW())
-    """, (session["user_id"], kegiatan, tempat, tanggal_input, waktu, peserta))
+        INSERT INTO undangan (user_id, kegiatan, tempat, tanggal, waktu, waktu_selesai, peserta, status, tanggal_dibuat)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, 'pending', NOW())
+    """, (session["user_id"], kegiatan, tempat, tanggal_input, waktu, waktu_selesai, peserta))
     conn.commit()
 
     flash("Undangan berhasil dikirim ke admin.", "success")
@@ -392,6 +516,7 @@ def edit_undangan(id):
         tempat = request.form.get("tempat")
         tanggal_input = request.form.get("tanggal")
         waktu = request.form.get("waktu")
+        waktu_selesai = request.form.get("waktu_selesai")
         peserta = request.form.get("peserta")
 
         cursor.execute("""
@@ -400,12 +525,13 @@ def edit_undangan(id):
                 tempat = %s,
                 tanggal = %s,
                 waktu = %s,
+                waktu_selesai = %s,
                 peserta = %s,
                 updated_at = NOW(),
                 updated_by = %s,
                 version = version + 1
             WHERE id = %s AND status = 'pending'
-        """, (kegiatan, tempat, tanggal_input, waktu, peserta, session["user_id"], id))
+        """, (kegiatan, tempat, tanggal_input, waktu, waktu_selesai, peserta, session["user_id"], id))
 
         changes = []
         if undangan["kegiatan"] != kegiatan:
@@ -414,16 +540,25 @@ def edit_undangan(id):
             changes.append(("tempat", undangan["tempat"], tempat))
         if str(undangan["tanggal"]) != tanggal_input:
             changes.append(("tanggal", str(undangan["tanggal"]), tanggal_input))
-        if undangan["waktu"] != waktu:
-            changes.append(("waktu", undangan["waktu"], waktu))
+        if str(undangan["waktu"])[:5] != str(waktu)[:5]:
+            changes.append(("waktu", str(undangan["waktu"])[:5], waktu))
+        if str(undangan.get("waktu_selesai") or "")[:5] != str(waktu_selesai or "")[:5]:
+            changes.append(("waktu_selesai", str(undangan.get("waktu_selesai") or "")[:5], waktu_selesai or ""))
         if undangan["peserta"] != peserta:
             changes.append(("peserta", undangan["peserta"], peserta))
 
         for field_name, old_value, new_value in changes:
-            cursor.execute("""
-                INSERT INTO undangan_history (undangan_id, field_name, old_value, new_value, changed_by)
-                VALUES (%s, %s, %s, %s, %s)
-            """, (id, field_name, old_value, new_value, session["user_id"]))
+            try:
+                cursor.execute("""
+                    INSERT INTO undangan_history (undangan_id, field_name, old_value, new_value, changed_by)
+                    VALUES (%s, %s, %s, %s, %s)
+                """, (id, field_name, old_value, new_value, session["user_id"]))
+            except pymysql.err.ProgrammingError as e:
+                if e.args and e.args[0] == 1146:
+                    # Table not found: skip audit insert to avoid blocking main update flow.
+                    print("Tabel undangan_history belum tersedia, histori perubahan tidak disimpan.")
+                    break
+                raise
 
         conn.commit()
 
@@ -461,7 +596,9 @@ def preview_undangan_user(id):
         "user/preview-undangan.html",
         undangan=undangan,
         nomor_surat=nomor_surat,
-        tanggal_format=undangan["tanggal"].strftime("%d %B %Y") if undangan["tanggal"] else "-"
+        tanggal_surat=format_tanggal_indo(undangan["tanggal_dibuat"]) if undangan.get("tanggal_dibuat") else format_tanggal_indo(datetime.now()),
+        tanggal_acara=format_tanggal_indo(undangan["tanggal"]) if undangan["tanggal"] else "-",
+        waktu_range=format_waktu_rentang(undangan["waktu"], undangan.get("waktu_selesai"))
     )
 
 
@@ -474,6 +611,11 @@ def notulensi():
         return redirect(url_for("login"))
 
     if request.method == "POST":
+        # Lazy import: avoid loading heavy AI modules when opening the page (GET).
+        from services.filter_service import clean_transcript
+        from services.notulensi_service import generate_notulensi
+        from services.transkripsi_service import transcribe_audio, transcribe_audio_complete
+
         kegiatan = request.form.get("kegiatan", "").strip()
         tempat = request.form.get("tempat", "").strip()
         peserta = request.form.get("peserta", "").strip()
@@ -569,6 +711,8 @@ def notulensi():
             # MODE 2: TRANSKRIP + SUMMARY
             # =========================
             elif jenis_proses == "summary":
+                from services.summary_service import summarize_text
+
                 try:
                     transkrip_asli = transcribe_audio(filepath) or ""
                 except Exception as e:
@@ -593,6 +737,12 @@ def notulensi():
             # MODE 3: TRANSKRIP + DIARIZATION
             # =========================
             elif jenis_proses == "diarization":
+                from services.diarization_service import (
+                    diarize_audio,
+                    assign_speakers_to_transcript,
+                    format_speaker_transcript,
+                )
+
                 try:
                     # Satu panggilan saja untuk text + segments
                     transkrip_result = transcribe_audio_complete(filepath)
@@ -719,6 +869,33 @@ def notulensi():
         file_path=None
     )
 
+
+@app.route("/user/riwayat-notulensi")
+def riwayat_notulensi():
+    if "user_id" not in session or session.get("role") != "user":
+        return redirect(url_for("login"))
+
+    cursor = get_cursor()
+    cursor.execute("""
+        SELECT n.id, k.nama_kegiatan AS kegiatan, k.tempat, k.waktu,
+               n.file_path, n.ringkasan
+        FROM notulensi n
+        JOIN kegiatan k ON n.kegiatan_id = k.id
+        WHERE k.created_by = %s
+        ORDER BY k.waktu DESC
+    """, (session["user_id"],))
+    data_notulensi = cursor.fetchall()
+
+    for item in data_notulensi:
+        raw_path = item.get("file_path") or ""
+        normalized_path = raw_path.replace("\\", "/")
+        item["filename"] = os.path.basename(normalized_path) if normalized_path else ""
+
+    return render_template(
+        "user/riwayat-notulensi.html",
+        data_notulensi=data_notulensi
+    )
+
 # =========================
 # ADMIN - DASHBOARD
 # =========================
@@ -745,7 +922,7 @@ def admin_dashboard():
     # AKTIVITAS TERBARU
     # =========================
     cursor.execute("""
-        SELECT kegiatan, tanggal, waktu, tempat
+        SELECT kegiatan, tanggal, waktu, waktu_selesai, tempat
         FROM undangan
         ORDER BY tanggal_dibuat DESC
         LIMIT 5
@@ -868,7 +1045,9 @@ def lihat_undangan_admin(id):
         "admin/detail-undangan.html",
         undangan=undangan,
         nomor_surat=nomor_surat,
-        tanggal_format=undangan["tanggal"].strftime("%d %B %Y") if undangan["tanggal"] else "-"
+        tanggal_surat=format_tanggal_indo(undangan["tanggal_dibuat"]) if undangan.get("tanggal_dibuat") else format_tanggal_indo(datetime.now()),
+        tanggal_acara=format_tanggal_indo(undangan["tanggal"]) if undangan["tanggal"] else "-",
+        waktu_range=format_waktu_rentang(undangan["waktu"], undangan.get("waktu_selesai"))
     )
 
 # =========================
@@ -909,6 +1088,21 @@ def setujui_undangan(id):
 
     for p in daftar_penerima:
         pdf_path = generate_pdf_undangan(data, p["nama"])
+        # generate unique token untuk konfirmasi kehadiran
+        token = secrets.token_urlsafe(32)
+        try:
+            cursor.execute(
+                """
+                INSERT INTO konfirmasi_kehadiran (undangan_id, nama, email, token)
+                VALUES (%s, %s, %s, %s)
+                """,
+                (data["id"], p["nama"], p["email"], token)
+            )
+            conn.commit()
+        except Exception as e:
+            conn.rollback()
+            print("Gagal menyimpan token konfirmasi untuk", p.get("email"), e)
+
         kirim_email_undangan(
             to_email=p["email"],
             kegiatan=data["kegiatan"],
@@ -916,8 +1110,11 @@ def setujui_undangan(id):
             waktu=data["waktu"],
             tempat=data["tempat"],
             peserta=p["nama"],
-            pdf_path=pdf_path
+            pdf_path=pdf_path,
+            token=token
         )
+
+        # TODO: Kirim PDF ke Telegram peserta jika telegram_chat_id sudah tersedia di database.
 
     flash("Undangan berhasil disetujui dan email dikirim ke peserta.", "success")
     return redirect(url_for("admin_approval"))
@@ -977,6 +1174,63 @@ def admin_monitoring():
 
     cursor = get_cursor()
 
+    now = datetime.now()
+    try:
+        selected_month = int(request.args.get("month", now.month))
+    except (TypeError, ValueError):
+        selected_month = now.month
+
+    try:
+        selected_year = int(request.args.get("year", now.year))
+    except (TypeError, ValueError):
+        selected_year = now.year
+
+    if selected_month < 1 or selected_month > 12:
+        selected_month = now.month
+
+    cursor.execute("""
+        SELECT
+            un.id,
+            un.kegiatan,
+            un.tanggal,
+            un.waktu,
+            un.waktu_selesai,
+            un.tempat,
+            un.peserta,
+            un.status,
+            un.tanggal_dibuat,
+            u.email AS pembuat
+        FROM undangan un
+        LEFT JOIN users u ON un.user_id = u.id
+        WHERE MONTH(un.tanggal_dibuat) = %s
+          AND YEAR(un.tanggal_dibuat) = %s
+        ORDER BY un.tanggal_dibuat DESC
+    """, (selected_month, selected_year))
+    undangan_bulanan = cursor.fetchall()
+
+    cursor.execute("""
+        SELECT
+            COUNT(*) AS total,
+            SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) AS pending,
+            SUM(CASE WHEN status = 'approved' THEN 1 ELSE 0 END) AS approved,
+            SUM(CASE WHEN status = 'rejected' THEN 1 ELSE 0 END) AS rejected
+        FROM undangan
+        WHERE MONTH(tanggal_dibuat) = %s
+          AND YEAR(tanggal_dibuat) = %s
+    """, (selected_month, selected_year))
+    monthly_summary = cursor.fetchone() or {}
+
+    cursor.execute("""
+        SELECT DISTINCT YEAR(tanggal_dibuat) AS tahun
+        FROM undangan
+        ORDER BY tahun DESC
+    """)
+    available_years = [row["tahun"] for row in cursor.fetchall() if row.get("tahun")]
+    if not available_years:
+        available_years = [now.year]
+    if selected_year not in available_years:
+        available_years.insert(0, selected_year)
+
     cursor.execute("""
         SELECT 
             u.email AS pembuat,
@@ -1001,14 +1255,51 @@ def admin_monitoring():
     data_notulensi = cursor.fetchall()
 
     aktivitas = data_undangan + data_notulensi
-
     aktivitas = sorted(
         aktivitas,
         key=lambda x: x["tanggal"] if x["tanggal"] else "",
         reverse=True
     )
 
-    return render_template("admin/monitoring.html", aktivitas=aktivitas)
+    # Statistik konfirmasi kehadiran untuk bulan/taun terpilih
+    cursor.execute("""
+        SELECT
+            SUM(CASE WHEN status_kehadiran = 'hadir' THEN 1 ELSE 0 END) AS hadir,
+            SUM(CASE WHEN status_kehadiran = 'tidak_hadir' THEN 1 ELSE 0 END) AS tidak_hadir,
+            SUM(CASE WHEN status_kehadiran = 'diwakilkan' THEN 1 ELSE 0 END) AS diwakilkan
+        FROM konfirmasi_kehadiran
+        WHERE MONTH(created_at) = %s AND YEAR(created_at) = %s
+    """, (selected_month, selected_year))
+    konfirmasi_stats = cursor.fetchone() or {"hadir": 0, "tidak_hadir": 0, "diwakilkan": 0}
+
+    cursor.execute("""
+        SELECT kk.*, u.kegiatan
+        FROM konfirmasi_kehadiran kk
+        LEFT JOIN undangan u ON kk.undangan_id = u.id
+        WHERE MONTH(kk.created_at) = %s AND YEAR(kk.created_at) = %s
+        ORDER BY kk.created_at DESC
+    """, (selected_month, selected_year))
+    konfirmasi_list = cursor.fetchall()
+
+    month_options = [
+        (1, "Januari"), (2, "Februari"), (3, "Maret"), (4, "April"),
+        (5, "Mei"), (6, "Juni"), (7, "Juli"), (8, "Agustus"),
+        (9, "September"), (10, "Oktober"), (11, "November"), (12, "Desember")
+    ]
+
+    return render_template(
+        "admin/monitoring.html",
+        aktivitas=aktivitas,
+        undangan_bulanan=undangan_bulanan,
+        monthly_summary=monthly_summary,
+        selected_month=selected_month,
+        selected_year=selected_year,
+        month_options=month_options,
+        available_years=available_years,
+        format_waktu_rentang=format_waktu_rentang,
+        konfirmasi_stats=konfirmasi_stats,
+        konfirmasi_list=konfirmasi_list
+    )
 
 
 # =========================
@@ -1021,12 +1312,22 @@ def admin_penerima():
 
     cursor = get_cursor()
 
-    cursor.execute("""
-        SELECT id, nama_kategori
-        FROM kategori_undangan
-        ORDER BY nama_kategori ASC
-    """)
-    kategori_list = cursor.fetchall()
+    if kategori_has_is_active_column():
+        cursor.execute("""
+            SELECT id, nama_kategori, is_active
+            FROM kategori_undangan
+            ORDER BY is_active DESC, nama_kategori ASC
+        """)
+        kategori_manage_list = cursor.fetchall()
+        kategori_list = [item for item in kategori_manage_list if item["is_active"] == 1]
+    else:
+        cursor.execute("""
+            SELECT id, nama_kategori
+            FROM kategori_undangan
+            ORDER BY nama_kategori ASC
+        """)
+        kategori_list = cursor.fetchall()
+        kategori_manage_list = []
 
     cursor.execute("""
         SELECT m.id, m.nama, m.email, k.nama_kategori AS kategori
@@ -1039,7 +1340,9 @@ def admin_penerima():
     return render_template(
         "admin/penerima.html",
         daftar_penerima=daftar_penerima,
-        kategori_list=kategori_list
+        kategori_list=kategori_list,
+        kategori_manage_list=kategori_manage_list,
+        kategori_has_status=kategori_has_is_active_column()
     )
 
 @app.route("/admin/kategori/tambah", methods=["POST"])
@@ -1055,16 +1358,37 @@ def tambah_kategori():
 
     cursor = get_cursor()
 
-    cursor.execute("""
-        SELECT COUNT(*) AS total
-        FROM kategori_undangan
-        WHERE nama_kategori = %s
-    """, (nama_kategori,))
-    cek = cursor.fetchone()
+    if kategori_has_is_active_column():
+        cursor.execute("""
+            SELECT id, is_active
+            FROM kategori_undangan
+            WHERE nama_kategori = %s
+        """, (nama_kategori,))
+        existing = cursor.fetchone()
 
-    if cek["total"] > 0:
-        flash("Kategori sudah ada.", "warning")
-        return redirect(url_for("admin_penerima"))
+        if existing:
+            if existing["is_active"] == 1:
+                flash("Kategori sudah ada.", "warning")
+            else:
+                cursor.execute("""
+                    UPDATE kategori_undangan
+                    SET is_active = 1
+                    WHERE id = %s
+                """, (existing["id"],))
+                conn.commit()
+                flash("Kategori berhasil diaktifkan kembali.", "success")
+            return redirect(url_for("admin_penerima"))
+    else:
+        cursor.execute("""
+            SELECT COUNT(*) AS total
+            FROM kategori_undangan
+            WHERE nama_kategori = %s
+        """, (nama_kategori,))
+        cek = cursor.fetchone()
+
+        if cek["total"] > 0:
+            flash("Kategori sudah ada.", "warning")
+            return redirect(url_for("admin_penerima"))
 
     cursor.execute("""
         INSERT INTO kategori_undangan (nama_kategori)
@@ -1087,12 +1411,34 @@ def tambah_penerima():
     if not nama or not email or not kategori_id:
         flash("Nama, email, dan kategori wajib diisi.", "warning")
         return redirect(url_for("admin_penerima"))
+    valid, pesan = validasi_email(email)
+    if not valid:
+        flash(pesan, "warning")
+        return redirect(url_for("admin_penerima"))
 
     cursor = get_cursor()
+    if kategori_has_is_active_column():
+        cursor.execute("""
+            SELECT id, nama_kategori
+            FROM kategori_undangan
+            WHERE id = %s AND is_active = 1
+        """, (kategori_id,))
+    else:
+        cursor.execute("""
+            SELECT id, nama_kategori
+            FROM kategori_undangan
+            WHERE id = %s
+        """, (kategori_id,))
+    kategori = cursor.fetchone()
+
+    if not kategori:
+        flash("Kategori tidak valid.", "warning")
+        return redirect(url_for("admin_penerima"))
+
     cursor.execute("""
-        INSERT INTO master_peserta_undangan (nama, email, kategori_id)
-        VALUES (%s, %s, %s)
-    """, (nama, email, kategori_id))
+        INSERT INTO master_peserta_undangan (nama, email, kategori, kategori_id)
+        VALUES (%s, %s, %s, %s)
+    """, (nama, email, kategori["nama_kategori"], kategori["id"]))
     conn.commit()
 
     flash("Penerima berhasil ditambahkan.", "success")
@@ -1111,12 +1457,161 @@ def hapus_penerima(id):
     flash("Penerima berhasil dihapus.", "success")
     return redirect(url_for("admin_penerima"))
 
+
+@app.route("/admin/kategori/nonaktif/<int:id>", methods=["POST"])
+def nonaktifkan_kategori(id):
+    if "user_id" not in session or session.get("role") != "admin":
+        return redirect(url_for("login"))
+
+    if not kategori_has_is_active_column():
+        flash("Fitur nonaktif kategori belum tersedia di database.", "danger")
+        return redirect(url_for("admin_penerima"))
+
+    cursor = get_cursor()
+    cursor.execute("""
+        SELECT id, nama_kategori, is_active
+        FROM kategori_undangan
+        WHERE id = %s
+    """, (id,))
+    kategori = cursor.fetchone()
+
+    if not kategori:
+        flash("Kategori tidak ditemukan.", "warning")
+        return redirect(url_for("admin_penerima"))
+
+    if kategori["is_active"] == 0:
+        flash("Kategori sudah nonaktif.", "info")
+        return redirect(url_for("admin_penerima"))
+
+    cursor.execute("""
+        SELECT COUNT(*) AS total
+        FROM master_peserta_undangan
+        WHERE kategori_id = %s
+    """, (id,))
+    pemakaian = cursor.fetchone()
+
+    if pemakaian and pemakaian["total"] > 0:
+        flash(
+            f"Kategori tidak bisa dinonaktifkan karena masih dipakai {pemakaian['total']} penerima.",
+            "warning"
+        )
+        return redirect(url_for("admin_penerima"))
+
+    cursor.execute("""
+        UPDATE kategori_undangan
+        SET is_active = 0
+        WHERE id = %s
+    """, (id,))
+    conn.commit()
+
+    flash("Kategori berhasil dinonaktifkan.", "success")
+    return redirect(url_for("admin_penerima"))
+
+
+@app.route("/admin/kategori/hapus/<int:id>", methods=["POST"])
+def hapus_kategori(id):
+    if "user_id" not in session or session.get("role") != "admin":
+        return redirect(url_for("login"))
+
+    if not kategori_has_is_active_column():
+        flash("Fitur hapus kategori bertahap belum tersedia di database.", "danger")
+        return redirect(url_for("admin_penerima"))
+
+    cursor = get_cursor()
+    cursor.execute("""
+        SELECT id, nama_kategori, is_active
+        FROM kategori_undangan
+        WHERE id = %s
+    """, (id,))
+    kategori = cursor.fetchone()
+
+    if not kategori:
+        flash("Kategori tidak ditemukan.", "warning")
+        return redirect(url_for("admin_penerima"))
+
+    if kategori["is_active"] == 1:
+        flash("Kategori aktif tidak bisa dihapus. Nonaktifkan dulu kategori ini.", "warning")
+        return redirect(url_for("admin_penerima"))
+
+    cursor.execute("""
+        SELECT COUNT(*) AS total
+        FROM master_peserta_undangan
+        WHERE kategori_id = %s
+    """, (id,))
+    pemakaian = cursor.fetchone()
+
+    if pemakaian and pemakaian["total"] > 0:
+        flash(
+            f"Kategori tidak bisa dihapus karena masih dipakai {pemakaian['total']} penerima.",
+            "warning"
+        )
+        return redirect(url_for("admin_penerima"))
+
+    cursor.execute("DELETE FROM kategori_undangan WHERE id = %s", (id,))
+    conn.commit()
+
+    flash("Kategori berhasil dihapus.", "success")
+    return redirect(url_for("admin_penerima"))
+
 # =========================
 # DOWNLOAD NOTULENSI
 # =========================
 @app.route("/download/<filename>")
 def download_notulensi(filename):
     return send_from_directory("outputs/notulensi", filename, as_attachment=True)
+
+
+@app.route('/kehadiran/<token>', methods=['GET', 'POST'])
+def konfirmasi_kehadiran(token):
+    # halaman publik untuk mengonfirmasi kehadiran via token
+    cursor = get_cursor()
+    cursor.execute("""
+        SELECT kk.*, u.kegiatan, u.tanggal, u.waktu, u.waktu_selesai, u.tempat
+        FROM konfirmasi_kehadiran kk
+        LEFT JOIN undangan u ON kk.undangan_id = u.id
+        WHERE kk.token = %s
+    """, (token,))
+    row = cursor.fetchone()
+
+    if not row:
+        return render_template('public/kehadiran_selesai.html', message='Token tidak valid atau sudah kadaluwarsa.')
+
+    if request.method == 'GET':
+        if row.get('status_kehadiran') is not None:
+            return render_template('public/kehadiran_selesai.html', message='Anda sudah melakukan konfirmasi. Terima kasih.')
+        return render_template(
+            'public/chatbot_kehadiran.html',
+            token=token,
+            kegiatan=row.get('kegiatan'),
+            tanggal_display=format_tanggal_indo(row.get('tanggal')) if row.get('tanggal') else '-',
+            waktu_display=format_waktu_rentang(row.get('waktu'), row.get('waktu_selesai'), with_wib=True) if row.get('waktu') else '-',
+            tempat=row.get('tempat') or '-'
+        )
+
+    # POST: terima data konfirmasi
+    data = request.get_json() or request.form
+    status_val = data.get('status')
+    nama = data.get('nama')
+    email = data.get('email')
+
+    if status_val not in ('hadir', 'tidak_hadir', 'diwakilkan'):
+        return { 'success': False, 'message': 'Status kehadiran tidak valid.' }, 400
+
+    try:
+        cursor.execute("""
+            UPDATE konfirmasi_kehadiran
+            SET nama = %s,
+                email = %s,
+                status_kehadiran = %s,
+                waktu_konfirmasi = NOW()
+            WHERE token = %s
+        """, (nama, email, status_val, token))
+        conn.commit()
+    except Exception as e:
+        conn.rollback()
+        return { 'success': False, 'message': 'Gagal menyimpan konfirmasi.' }, 500
+
+    return render_template('public/kehadiran_selesai.html', message='Konfirmasi kehadiran berhasil. Terima kasih.')
 
 if __name__ == "__main__":
     app.run(debug=True, use_reloader=True)

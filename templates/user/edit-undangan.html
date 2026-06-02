@@ -56,8 +56,13 @@
           </div>
 
           <div class="input-group">
-            <label for="waktu">Waktu</label>
-            <input type="time" id="waktu" name="waktu" value="{{ undangan.waktu }}" required>
+            <label for="waktu">Waktu Mulai</label>
+            <input type="time" id="waktu" name="waktu" value="{{ (undangan.waktu|string)[:5] }}" required>
+          </div>
+
+          <div class="input-group">
+            <label for="waktu_selesai">Waktu Selesai</label>
+            <input type="time" id="waktu_selesai" name="waktu_selesai" value="{{ (undangan.waktu_selesai|string)[:5] if undangan.waktu_selesai else '' }}" required>
           </div>
         </div>
 

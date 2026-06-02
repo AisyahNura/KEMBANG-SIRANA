@@ -66,7 +66,12 @@
                 <td>{{ undangan.kegiatan }}</td>
                 <td>{{ undangan.pembuat }}</td>
                 <td>{{ undangan.tanggal }}</td>
-                <td>{{ undangan.waktu }}</td>
+                <td>
+                  {{ (undangan.waktu|string)[:5] }}
+                  {% if undangan.waktu_selesai %}
+                    - {{ (undangan.waktu_selesai|string)[:5] }}
+                  {% endif %}
+                </td>
                 <td>{{ undangan.tempat }}</td>
                 <td>{{ undangan.peserta }}</td>
                 <td><span class="badge pending">Pending</span></td>
@@ -81,12 +86,23 @@
 
     <div class="dropdown-menu">
       <form action="{{ url_for('setujui_undangan', id=undangan.id) }}" method="POST">
-        <button type="submit" class="dropdown-item approve">Setujui</button>
+        <button type="submit" class="dropdown-item approve">
+          <span class="dropdown-item-title">Setujui via Email</span>
+          <span class="dropdown-item-subtitle">Kirim melalui email</span>
+        </button>
       </form>
+
+      <button type="button" class="dropdown-item approve is-disabled" disabled title="Belum dihubungkan ke backend Telegram">
+        <span class="dropdown-item-title">Setujui via Telegram</span>
+        <span class="dropdown-item-subtitle">Sedang disiapkan</span>
+      </button>
 
       <form action="{{ url_for('tolak_undangan', id=undangan.id) }}" method="POST">
         <input type="hidden" name="catatan_admin" value="Ditolak admin">
-        <button type="submit" class="dropdown-item reject">Tolak</button>
+        <button type="submit" class="dropdown-item reject">
+          <span class="dropdown-item-title">Tolak</span>
+          <span class="dropdown-item-subtitle">Batalkan undangan</span>
+        </button>
       </form>
     </div>
   </div>
@@ -128,7 +144,12 @@
                 <td>{{ undangan.kegiatan }}</td>
                 <td>{{ undangan.pembuat }}</td>
                 <td>{{ undangan.tanggal }}</td>
-                <td>{{ undangan.waktu }}</td>
+                <td>
+                  {{ (undangan.waktu|string)[:5] }}
+                  {% if undangan.waktu_selesai %}
+                    - {{ (undangan.waktu_selesai|string)[:5] }}
+                  {% endif %}
+                </td>
                 <td>{{ undangan.tempat }}</td>
                 <td>{{ undangan.peserta }}</td>
                 <td><span class="badge approved">Approved</span></td>

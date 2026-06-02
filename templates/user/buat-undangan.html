@@ -78,8 +78,13 @@
           </div>
 
           <div class="input-group">
-            <label for="waktu">Waktu</label>
+            <label for="waktu">Waktu Mulai</label>
             <input type="time" id="waktu" name="waktu" required>
+          </div>
+
+          <div class="input-group">
+            <label for="waktu_selesai">Waktu Selesai</label>
+            <input type="time" id="waktu_selesai" name="waktu_selesai" required>
           </div>
         </div>
 
@@ -132,7 +137,7 @@
           <td class="meta-label">Nomor</td>
           <td class="meta-sep">:</td>
           <td>{{ nomor_surat }}</td>
-          <td class="meta-tanggal">Jombang, {{ tanggal }}</td>
+          <td class="meta-tanggal">Jombang, {{ tanggal_surat }}</td>
         </tr>
         <tr>
           <td class="meta-label">Sifat</td>
@@ -165,12 +170,12 @@
         <tr>
           <td class="detail-label">Hari/Tanggal</td>
           <td class="detail-sep">:</td>
-          <td>{{ tanggal }}</td>
+          <td>{{ tanggal_acara }}</td>
         </tr>
         <tr>
           <td class="detail-label">Waktu</td>
           <td class="detail-sep">:</td>
-          <td>{{ waktu }}</td>
+          <td>{{ waktu }} - {{ waktu_selesai }}</td>
         </tr>
         <tr>
           <td class="detail-label">Tempat</td>
@@ -201,6 +206,7 @@
         <input type="hidden" name="tempat" value="{{ tempat }}">
         <input type="hidden" name="tanggal_input" value="{{ tanggal_input }}">
         <input type="hidden" name="waktu" value="{{ waktu }}">
+        <input type="hidden" name="waktu_selesai" value="{{ waktu_selesai }}">
         <input type="hidden" name="peserta" value="{{ peserta }}">
         <button type="submit" class="btn-green">Kirim ke Admin</button>
       </form>

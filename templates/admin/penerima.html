@@ -53,6 +53,50 @@
         </form>
       </section>
 
+      {% if kategori_has_status and kategori_manage_list %}
+      <section class="table-section" style="margin-bottom: 30px;">
+        <div class="section-title pending-title">Daftar Kategori Penerima</div>
+
+        <table>
+          <thead>
+            <tr>
+              <th>No</th>
+              <th>Nama Kategori</th>
+              <th>Status</th>
+              <th>Aksi</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in kategori_manage_list %}
+            <tr>
+              <td>{{ loop.index }}</td>
+              <td>{{ item.nama_kategori }}</td>
+              <td>
+                {% if item.is_active == 1 %}
+                  Aktif
+                {% else %}
+                  Nonaktif
+                {% endif %}
+              </td>
+              <td>
+                {% if item.is_active == 1 %}
+                  <form action="{{ url_for('nonaktifkan_kategori', id=item.id) }}" method="POST" onsubmit="return confirm('Nonaktifkan kategori ini?')">
+                    <button type="submit" class="action-btn reject-btn">Nonaktifkan</button>
+                  </form>
+                  <small style="display:block; margin-top:6px; color:#6b7280;">Hapus aktif tidak diizinkan</small>
+                {% else %}
+                <form action="{{ url_for('hapus_kategori', id=item.id) }}" method="POST" onsubmit="return confirm('Hapus kategori nonaktif ini permanen?')">
+                  <button type="submit" class="action-btn reject-btn">Hapus</button>
+                </form>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </section>
+      {% endif %}
+
       <!-- TAMBAH PENERIMA -->
       <section class="table-section" style="margin-bottom: 30px;">
         <div class="section-title approved-title">Tambah Penerima</div>
@@ -61,6 +105,7 @@
           <div class="form-row">
             <input type="text" name="nama" placeholder="Nama penerima" required>
             <input type="email" name="email" placeholder="Email penerima" required>
+            <input type="text" name="nomor_hp" placeholder="Nomor HP penerima">
 
             <select name="kategori_id" required>
               <option value="">Pilih kategori</option>
@@ -93,6 +138,7 @@
               <th>No</th>
               <th>Nama</th>
               <th>Email</th>
+              <th>Nomor HP</th>
               <th>Kategori</th>
               <th>Aksi</th>
             </tr>
@@ -104,6 +150,7 @@
                 <td>{{ loop.index }}</td>
                 <td>{{ item.nama }}</td>
                 <td>{{ item.email }}</td>
+                <td>{{ item.nomor_hp if item.nomor_hp else '-' }}</td>
                 <td>{{ item.kategori }}</td>
                 <td>
                   <form action="{{ url_for('hapus_penerima', id=item.id) }}" method="POST" onsubmit="return confirm('Yakin hapus data ini?')">
@@ -114,7 +161,7 @@
               {% endfor %}
             {% else %}
               <tr>
-                <td colspan="5" class="empty-text">Belum ada data penerima.</td>
+                <td colspan="6" class="empty-text">Belum ada data penerima.</td>
               </tr>
             {% endif %}
           </tbody>

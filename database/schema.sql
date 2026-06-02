@@ -7,6 +7,7 @@ CREATE TABLE IF NOT EXISTS undangan (
     tempat VARCHAR(255) NOT NULL,
     tanggal DATE NOT NULL,
     waktu TIME NOT NULL,
+    waktu_selesai TIME NULL,
     peserta TEXT NOT NULL,
     anggaran VARCHAR(100) NOT NULL,
     status ENUM('pending', 'approved', 'rejected') DEFAULT 'pending',

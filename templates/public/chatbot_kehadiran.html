@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Konfirmasi Kehadiran</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <style>
+    :root{--brand:#2e8b57;--brand-dark:#245f3f;--brand-soft:#eaf7ef;--muted:#7f9689;--bg:#f4fff7;--line:#dce9e0}
+    *{box-sizing:border-box}
+    body{background:
+      radial-gradient(circle at top left, rgba(46,139,87,.12), transparent 28%),
+      radial-gradient(circle at top right, rgba(46,139,87,.08), transparent 22%),
+      var(--bg);
+      font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,Helvetica,sans-serif;
+      margin:0;padding:0;color:#223;min-height:100vh}
+    .chat-wrap{width:min(96vw, 1120px);margin:3vh auto 4vh;padding:0}
+    .hero{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:14px;color:#163827}
+    .hero-brand{display:flex;align-items:center;gap:14px}
+    .hero-badge{width:56px;height:56px;border-radius:18px;background:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 12px 24px rgba(46,139,87,.18);overflow:hidden;padding:7px}
+    .hero-badge img{width:100%;height:100%;object-fit:contain;display:block}
+    .hero-title{font-size:20px;font-weight:800;line-height:1.15}
+    .hero-subtitle{font-size:13px;color:var(--muted);margin-top:4px}
+    .layout{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(280px,.8fr);gap:18px}
+    .chat-card,.info-card{background:linear-gradient(180deg,#fff,#fbfff9);border:1px solid rgba(46,139,87,.08);box-shadow:0 18px 50px rgba(46,139,87,.1);border-radius:24px;overflow:hidden}
+    .chat-head{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:18px 20px;background:linear-gradient(135deg,var(--brand),var(--brand-dark));color:#fff}
+    .chat-head-left{display:flex;align-items:center;gap:14px}
+    .chat-logo{width:48px;height:48px;border-radius:16px;background:#fff;display:flex;align-items:center;justify-content:center;flex:0 0 auto;overflow:hidden;padding:6px}
+    .chat-logo img{width:100%;height:100%;object-fit:contain;display:block}
+    .chat-title{font-size:18px;font-weight:800}
+    .chat-tag{font-size:12px;opacity:.92;margin-top:4px}
+    .chat-body{display:flex;flex-direction:column;height:min(72vh,760px);padding:0}
+    .messages{flex:1;overflow:auto;padding:18px 18px 10px;display:flex;flex-direction:column;gap:12px;background:linear-gradient(180deg,#fff, #f8fcf9)}
+    .bubble{max-width:84%;padding:13px 15px;border-radius:18px;line-height:1.5;font-size:15px;box-shadow:0 6px 14px rgba(34,34,34,.04);animation:pop .14s ease-out}
+    .bubble.bot{align-self:flex-start;background:var(--brand-soft);color:#173d2a;border-bottom-left-radius:4px}
+    .bubble.user{align-self:flex-end;background:var(--brand);color:#fff;border-bottom-right-radius:4px}
+    @keyframes pop{from{transform:translateY(6px);opacity:.6}to{transform:translateY(0);opacity:1}}
+    .typing{display:inline-flex;gap:6px;align-items:center;min-height:22px}
+    .typing span{width:8px;height:8px;border-radius:50%;background:#9fcfb5;animation:dots 1s infinite ease-in-out}
+    .typing span:nth-child(2){animation-delay:.15s}
+    .typing span:nth-child(3){animation-delay:.3s}
+    @keyframes dots{0%,80%,100%{transform:translateY(0);opacity:.45}40%{transform:translateY(-4px);opacity:1}}
+    .composer-wrap{padding:14px 18px 18px;border-top:1px solid var(--line);background:#fff}
+    .options{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:12px}
+    .btn-option{background:#fff;color:var(--brand);border:1.5px solid rgba(46,139,87,.14);padding:14px 12px;border-radius:14px;cursor:pointer;font-weight:800;font-size:14px;box-shadow:0 6px 14px rgba(46,139,87,.04);transition:transform .12s ease,box-shadow .12s ease,border-color .12s ease}
+    .btn-option:hover{transform:translateY(-2px);box-shadow:0 12px 20px rgba(46,139,87,.08)}
+    .btn-option.selected{background:var(--brand);color:#fff;border-color:var(--brand)}
+    .composer{display:none;gap:10px;align-items:center;flex-wrap:wrap}
+    .composer.active{display:flex}
+    .composer label{font-size:13px;color:var(--muted);width:100%;margin-bottom:-2px}
+    .composer input{flex:1;min-width:220px;padding:14px 16px;border:1px solid #dfe9e1;border-radius:14px;background:#fff;font-size:15px;outline:none}
+    .composer input:focus{border-color:rgba(46,139,87,.5);box-shadow:0 0 0 4px rgba(46,139,87,.08)}
+    .composer button{padding:14px 18px;border:none;border-radius:14px;background:var(--brand);color:#fff;font-weight:800;font-size:15px;cursor:pointer;box-shadow:0 10px 20px rgba(46,139,87,.18)}
+    .composer button[disabled]{opacity:.65;cursor:not-allowed}
+    .composer-summary{width:100%;padding:12px 14px;border:1px dashed #cfe2d5;border-radius:14px;background:#f7fcf8;color:#355545;font-size:14px;line-height:1.5}
+    .small{font-size:12px;color:var(--muted);margin-top:12px;text-align:center}
+    .info-card{padding:18px}
+    .info-chip{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:999px;background:var(--brand-soft);color:#1f5a3a;font-size:12px;font-weight:800;margin-bottom:14px}
+    .info-card h3{margin:0 0 8px;font-size:20px;color:#173d2a}
+    .info-card p{margin:0 0 14px;color:#50675a;font-size:14px;line-height:1.7}
+    .detail-list{display:grid;gap:10px}
+    .detail-item{padding:12px 14px;border:1px solid #e3eee6;border-radius:14px;background:#fff}
+    .detail-item .k{display:block;font-size:12px;color:var(--muted);margin-bottom:4px}
+    .detail-item .v{font-size:14px;font-weight:700;color:#224032;line-height:1.45}
+    .info-note{margin-top:14px;padding:14px;border-radius:16px;background:linear-gradient(180deg,#f7fcf8,#eef9f1);border:1px solid rgba(46,139,87,.08);font-size:13px;line-height:1.6;color:#4a6358}
+    @media (max-width:700px){
+      .chat-wrap{width:min(94vw, 1120px);margin:2vh auto 3vh}
+      .hero{flex-direction:column;align-items:flex-start}
+      .layout{grid-template-columns:1fr}
+      .chat-body{height:min(74vh,720px)}
+      .options{grid-template-columns:1fr}
+      .bubble{max-width:92%}
+    }
+  </style>
+</head>
+<body>
+  <div class="chat-wrap">
+    <div class="hero">
+      <div class="hero-brand">
+        <div class="hero-badge" aria-hidden>
+          <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Logo Kemenag">
+        </div>
+        <div>
+          <div class="hero-title">SIRANA KEMBANG Attendance Assistant</div>
+          <div class="hero-subtitle">Chat konfirmasi kehadiran oleh peserta undangan</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="layout">
+      <section class="chat-card">
+        <div class="chat-head">
+          <div class="chat-head-left">
+            <div class="chat-logo" aria-hidden>
+              <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Logo Kemenag">
+            </div>
+            <div>
+              <div class="chat-title">Konfirmasi Kehadiran</div>
+              <div class="chat-tag">{{ kegiatan or '-' }}</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="chat-body">
+          <div class="messages" id="messages" aria-live="polite"></div>
+
+          <div class="composer-wrap">
+            <div class="options" id="options" role="list">
+              <button class="btn-option" data-val="hadir" role="listitem">Hadir</button>
+              <button class="btn-option" data-val="tidak_hadir" role="listitem">Tidak Hadir</button>
+              <button class="btn-option" data-val="diwakilkan" role="listitem">Diwakilkan</button>
+            </div>
+
+            <div class="composer" id="composer">
+              <label id="composerLabel" for="composerInput"></label>
+              <input id="composerInput" type="text" autocomplete="off" />
+              <button id="composerButton" type="button">Lanjut</button>
+            </div>
+
+            <div class="small">Tidak perlu login. Data akan disimpan otomatis.</div>
+          </div>
+        </div>
+      </section>
+
+      <aside class="info-card">
+        <div class="info-chip">Detail Kegiatan</div>
+        <h3>{{ kegiatan or '-' }}</h3>
+        <p>Silakan konfirmasi kehadiran melalui chat singkat ini. Bot akan memandu Anda langkah demi langkah.</p>
+        <div class="detail-list">
+          <div class="detail-item">
+            <span class="k">Tanggal</span>
+            <span class="v">{{ tanggal_display }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="k">Waktu</span>
+            <span class="v">{{ waktu_display }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="k">Tempat</span>
+            <span class="v">{{ tempat }}</span>
+          </div>
+        </div>
+        <div class="info-note">
+          Flow dibuat seperti chatbot modern: bot menyapa, Anda pilih status, lalu isi nama dan email sebelum konfirmasi dikirim.
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <script>
+    const token = "{{ token }}";
+    const messages = document.getElementById('messages');
+    const options = document.getElementById('options');
+    const composer = document.getElementById('composer');
+    const composerLabel = document.getElementById('composerLabel');
+    const composerInput = document.getElementById('composerInput');
+    const composerButton = document.getElementById('composerButton');
+
+    const state = {
+      step: 'status',
+      status: '',
+      name: '',
+      email: ''
+    };
+
+    function scrollToBottom() {
+      messages.scrollTop = messages.scrollHeight;
+    }
+
+    function appendBubble(text, cls) {
+      const el = document.createElement('div');
+      el.className = 'bubble ' + cls;
+      el.textContent = text;
+      messages.appendChild(el);
+      scrollToBottom();
+      return el;
+    }
+
+    function appendTyping() {
+      const el = document.createElement('div');
+      el.className = 'bubble bot';
+      const wrap = document.createElement('div');
+      wrap.className = 'typing';
+      wrap.innerHTML = '<span></span><span></span><span></span>';
+      el.appendChild(wrap);
+      messages.appendChild(el);
+      scrollToBottom();
+      return el;
+    }
+
+    function botSay(text, delay) {
+      const typing = appendTyping();
+      setTimeout(() => {
+        typing.remove();
+        appendBubble(text, 'bot');
+      }, delay || 900);
+    }
+
+    function openComposer({ label, placeholder, buttonText, type = 'text' }) {
+      composer.classList.add('active');
+      composerLabel.textContent = label;
+      composerInput.type = type;
+      composerInput.placeholder = placeholder;
+      composerInput.value = '';
+      composerButton.textContent = buttonText;
+      composerInput.focus();
+      scrollToBottom();
+    }
+
+    function hideComposer() {
+      composer.classList.remove('active');
+    }
+
+    function showStatusStep() {
+      state.step = 'status';
+      options.style.display = 'grid';
+      hideComposer();
+    }
+
+    function showNameStep() {
+      state.step = 'name';
+      botSay('Silakan ketik nama lengkap Anda.', 800);
+      setTimeout(() => {
+        openComposer({
+          label: 'Nama lengkap',
+          placeholder: 'Contoh: Andi Wijaya',
+          buttonText: 'Lanjut'
+        });
+      }, 900);
+    }
+
+    function showEmailStep() {
+      state.step = 'email';
+      botSay('Sekarang masukkan email aktif Anda.', 800);
+      setTimeout(() => {
+        openComposer({
+          label: 'Email aktif',
+          placeholder: 'Contoh: andi@email.com',
+          buttonText: 'Lanjut',
+          type: 'email'
+        });
+      }, 900);
+    }
+
+    function showReviewStep() {
+      state.step = 'review';
+      botSay('Data sudah lengkap. Klik tombol kirim konfirmasi untuk menyimpan.', 800);
+      setTimeout(() => {
+        composer.classList.add('active');
+        composerLabel.textContent = 'Ringkasan';
+        composerInput.style.display = 'none';
+        composerButton.textContent = 'Kirim Konfirmasi';
+        composerInput.value = '';
+      }, 900);
+    }
+
+    function resetComposerInput() {
+      composerInput.style.display = 'block';
+    }
+
+    function validEmail(email) {
+      return /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email);
+    }
+
+    appendBubble('Halo, saya asisten konfirmasi kehadiran SIRANA KEMBANG. Silakan pilih status kehadiran Anda.', 'bot');
+
+    options.addEventListener('click', (event) => {
+      const button = event.target.closest('button');
+      if (!button) return;
+
+      document.querySelectorAll('.btn-option').forEach((item) => item.classList.remove('selected'));
+      button.classList.add('selected');
+
+      state.status = button.getAttribute('data-val');
+      appendBubble(button.textContent, 'user');
+
+      options.style.display = 'none';
+      showNameStep();
+    });
+
+    composerButton.addEventListener('click', async () => {
+      if (state.step === 'name') {
+        const value = composerInput.value.trim();
+        if (!value) {
+          composerInput.focus();
+          return;
+        }
+        state.name = value;
+        appendBubble(value, 'user');
+        hideComposer();
+        resetComposerInput();
+        showEmailStep();
+        return;
+      }
+
+      if (state.step === 'email') {
+        const value = composerInput.value.trim();
+        if (!value) {
+          composerInput.focus();
+          return;
+        }
+        if (!validEmail(value)) {
+          alert('Masukkan email yang valid');
+          composerInput.focus();
+          return;
+        }
+        state.email = value;
+        appendBubble(value, 'user');
+        hideComposer();
+        resetComposerInput();
+        showReviewStep();
+        return;
+      }
+
+      if (state.step === 'review') {
+        composerButton.disabled = true;
+        composerButton.textContent = 'Mengirim...';
+
+        try {
+          const response = await fetch('/kehadiran/' + token, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              status: state.status,
+              nama: state.name,
+              email: state.email
+            })
+          });
+
+          if (response.ok) {
+            appendBubble('Terima kasih. Konfirmasi Anda berhasil disimpan.', 'bot');
+            setTimeout(async () => {
+              const text = await response.text();
+              document.open();
+              document.write(text);
+              document.close();
+            }, 800);
+            return;
+          }
+
+          const json = await response.json();
+          alert(json.message || 'Gagal mengirim konfirmasi');
+        } catch (error) {
+          alert('Gagal mengirim: ' + error.message);
+        } finally {
+          composerButton.disabled = false;
+          composerButton.textContent = 'Kirim Konfirmasi';
+        }
+      }
+    });
+
+    composerInput.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        composerButton.click();
+      }
+    });
+
+    showStatusStep();
+  </script>
+</body>
+</html>

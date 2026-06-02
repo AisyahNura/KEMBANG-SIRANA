@@ -32,20 +32,116 @@
 
     <main class="main-content">
       <div class="header-row">
-        <h1>Monitoring Aktivitas</h1>
-
-        <div class="header-actions">
-          <select class="filter-select" disabled>
-            <option>Semua Aktivitas</option>
-            <option>Undangan</option>
-            <option>Notulensi</option>
-          </select>
-
-          <button class="export-btn" type="button">Export ↓</button>
-        </div>
+        <h1>Monitoring Undangan Bulanan</h1>
       </div>
 
+      <section class="table-section monitoring-hero">
+        <div class="monitoring-filter-wrap">
+          <form method="GET" class="monitoring-filter-form">
+            <div class="filter-block">
+              <label for="month">Bulan</label>
+              <select id="month" name="month" class="filter-select">
+                {% for value, label in month_options %}
+                  <option value="{{ value }}" {% if selected_month == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="filter-block">
+              <label for="year">Tahun</label>
+              <select id="year" name="year" class="filter-select">
+                {% for year in available_years %}
+                  <option value="{{ year }}" {% if selected_year == year %}selected{% endif %}>{{ year }}</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <button class="export-btn" type="submit">Filter</button>
+          </form>
+        </div>
+
+        <div class="monitoring-stats">
+          <article class="mini-summary">
+            <span>Total Undangan</span>
+            <strong>{{ monthly_summary.total or 0 }}</strong>
+          </article>
+          <article class="mini-summary pending">
+            <span>Pending</span>
+            <strong>{{ monthly_summary.pending or 0 }}</strong>
+          </article>
+          <article class="mini-summary approved">
+            <span>Approved</span>
+            <strong>{{ monthly_summary.approved or 0 }}</strong>
+          </article>
+          <article class="mini-summary rejected">
+            <span>Rejected</span>
+            <strong>{{ monthly_summary.rejected or 0 }}</strong>
+          </article>
+        </div>
+        <div class="monitoring-stats" style="margin-top:12px">
+          <article class="mini-summary">
+            <span>Total Hadir</span>
+            <strong>{{ konfirmasi_stats.hadir or 0 }}</strong>
+          </article>
+          <article class="mini-summary">
+            <span>Total Tidak Hadir</span>
+            <strong>{{ konfirmasi_stats.tidak_hadir or 0 }}</strong>
+          </article>
+          <article class="mini-summary">
+            <span>Total Diwakilkan</span>
+            <strong>{{ konfirmasi_stats.diwakilkan or 0 }}</strong>
+          </article>
+        </div>
+      </section>
+
       <section class="table-section">
+        <div class="section-title approved-title">Daftar Undangan Bulan Terpilih</div>
+        <table>
+          <thead>
+            <tr>
+              <th>No</th>
+              <th>Dibuat</th>
+              <th>Tanggal Acara</th>
+              <th>Kegiatan</th>
+              <th>Waktu</th>
+              <th>Tempat</th>
+              <th>Peserta</th>
+              <th>Pembuat</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for undangan in undangan_bulanan %}
+              <tr>
+                <td>{{ loop.index }}</td>
+                <td>{{ undangan.tanggal_dibuat.strftime('%d-%m-%Y') if undangan.tanggal_dibuat else '-' }}</td>
+                <td>{{ undangan.tanggal.strftime('%d-%m-%Y') if undangan.tanggal else '-' }}</td>
+                <td>{{ undangan.kegiatan }}</td>
+                <td>{{ format_waktu_rentang(undangan.waktu, undangan.waktu_selesai) }}</td>
+                <td>{{ undangan.tempat }}</td>
+                <td>{{ undangan.peserta }}</td>
+                <td>{{ undangan.pembuat or '-' }}</td>
+                <td>
+                  {% if undangan.status == 'approved' %}
+                    <span class="badge approved">Approved</span>
+                  {% elif undangan.status == 'pending' %}
+                    <span class="badge pending">Pending</span>
+                  {% else %}
+                    <span class="badge rejected">Rejected</span>
+                  {% endif %}
+                </td>
+              </tr>
+            {% else %}
+              <tr>
+                <td colspan="9" style="text-align:center;">Belum ada undangan untuk bulan ini.</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </section>
+
+      <section class="table-section">
+        <div class="section-title pending-title">Riwayat Aktivitas Umum</div>
         <table>
           <thead>
             <tr>
@@ -78,6 +174,47 @@
             {% else %}
               <tr>
                 <td colspan="4" style="text-align:center;">Belum ada aktivitas.</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </section>
+      <section class="table-section">
+        <div class="section-title approved-title">Konfirmasi Kehadiran Peserta</div>
+        <table>
+          <thead>
+            <tr>
+              <th>No</th>
+              <th>Waktu Konfirmasi</th>
+              <th>Nama</th>
+              <th>Email</th>
+              <th>Status</th>
+              <th>Undangan</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for k in konfirmasi_list %}
+              <tr>
+                <td>{{ loop.index }}</td>
+                <td>{{ k.created_at.strftime('%d-%m-%Y %H:%M') if k.created_at else '-' }}</td>
+                <td>{{ k.nama or '-' }}</td>
+                <td>{{ k.email or '-' }}</td>
+                <td>
+                  {% if k.status_kehadiran == 'hadir' %}
+                    <span class="badge hadir">Hadir</span>
+                  {% elif k.status_kehadiran == 'tidak_hadir' %}
+                    <span class="badge rejected">Tidak Hadir</span>
+                  {% elif k.status_kehadiran == 'diwakilkan' %}
+                    <span class="badge pending">Diwakilkan</span>
+                  {% else %}
+                    <span class="badge">Belum</span>
+                  {% endif %}
+                </td>
+                <td>{{ k.kegiatan or '-' }}</td>
+              </tr>
+            {% else %}
+              <tr>
+                <td colspan="6" style="text-align:center;">Belum ada konfirmasi untuk bulan ini.</td>
               </tr>
             {% endfor %}
           </tbody>

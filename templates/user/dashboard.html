@@ -76,7 +76,13 @@
             <div class="item-icon-circle">📨</div>
             <div>
               <strong>{{ u.kegiatan }}</strong>
-              <p>{{ u.tanggal }} • {{ u.waktu }} • {{ u.tempat }}</p>
+              <p>
+                {{ u.tanggal }}
+                •
+                {{ (u.waktu|string)[:5] }}{% if u.waktu_selesai %} - {{ (u.waktu_selesai|string)[:5] }}{% endif %}
+                •
+                {{ u.tempat }}
+              </p>
             </div>
           </div>
 
@@ -109,7 +115,7 @@
         <span class="section-badge">Riwayat</span>
         <h3>Notulensi Terakhir</h3>
       </div>
-      <a href="#">Lihat semua</a>
+      <a href="{{ url_for('riwayat_notulensi') }}">Lihat semua</a>
     </div>
 
     {% if notulensi_terakhir %}

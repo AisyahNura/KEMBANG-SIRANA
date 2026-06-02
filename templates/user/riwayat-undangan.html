@@ -59,7 +59,12 @@
             <td>{{ loop.index }}</td>
             <td>{{ u.kegiatan }}</td>
             <td>{{ u.tanggal }}</td>
-            <td>{{ u.waktu }}</td>
+            <td>
+              {{ (u.waktu|string)[:5] }}
+              {% if u.waktu_selesai %}
+                - {{ (u.waktu_selesai|string)[:5] }}
+              {% endif %}
+            </td>
             <td>{{ u.tempat }}</td>
             <td>{{ u.status }}</td>
             <td>{{ u.catatan_admin or '-' }}</td>
