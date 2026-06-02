@@ -9,6 +9,8 @@ DB_PASSWORD = os.getenv("DB_PASSWORD", "")
 DB_NAME = os.getenv("DB_NAME", "kembang_sirana")
 
 SECRET_KEY = os.getenv("SECRET_KEY")
+if not SECRET_KEY:
+    raise ValueError("SECRET_KEY environment variable is required")
 
 MAIL_SERVER = os.getenv("MAIL_SERVER", "")
 MAIL_PORT = int(os.getenv("MAIL_PORT", 587))
@@ -23,5 +25,10 @@ UPLOAD_FOLDER = "uploads/audio"
 OUTPUT_PDF_FOLDER = "outputs/pdf"
 OUTPUT_NOTULENSI_FOLDER = "outputs/notulensi"
 
-TELEGRAM_BOT_TOKEN = "8888340764:AAHSqYsw6Z6VsH9T4V8h8c0KOU1utxG7H1I"
-TELEGRAM_CHAT_ID = "6289106550"
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+if not TELEGRAM_BOT_TOKEN:
+    raise ValueError("TELEGRAM_BOT_TOKEN environment variable is required")
+
+TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
+if not TELEGRAM_CHAT_ID:
+    raise ValueError("TELEGRAM_CHAT_ID environment variable is required")

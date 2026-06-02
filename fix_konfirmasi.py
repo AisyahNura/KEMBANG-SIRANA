@@ -1,9 +1,10 @@
 """Quick fix: add missing columns and insert test token locally."""
+import os
 import pymysql
 import config
 import secrets
 
-TOKEN = 'DuJNKRrAKfN7jA1usbju5V9NX6ho2XHehrXJGxorhgk'
+TOKEN = os.getenv("FIX_KONFIRMASI_TOKEN") or secrets.token_urlsafe(32)
 UNDANGAN_ID = 36
 NAMA = 'Tamu Uji'
 EMAIL = 'uji@example.com'
