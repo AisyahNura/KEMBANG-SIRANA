@@ -1377,7 +1377,7 @@ def admin_monitoring():
     """)
     data_notulensi = cursor.fetchall()
 
-    aktivitas = data_undangan + data_notulensi
+    aktivitas = list(data_undangan) + list(data_notulensi)
     aktivitas = sorted(
         aktivitas,
         key=lambda x: x["tanggal"] if x["tanggal"] else "",
