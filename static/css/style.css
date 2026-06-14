@@ -396,6 +396,54 @@ img {
   gap: 12px;
 }
 
+.list-card {
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid rgba(255, 255, 255, 0.75);
+  border-radius: 24px;
+  box-shadow: var(--shadow-sm);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  padding: 24px;
+  overflow-x: auto;
+  margin-bottom: 24px;
+  width: 100%;
+}
+
+.list-card table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 700px;
+}
+
+.list-card th,
+.list-card td {
+  padding: 14px 16px;
+  text-align: left;
+  border-bottom: 1px solid rgba(23, 130, 60, 0.08);
+  font-size: 14px;
+}
+
+.list-card th {
+  background: var(--primary-soft);
+  color: var(--primary-dark);
+  font-weight: 700;
+  border-bottom: 2px solid rgba(23, 130, 60, 0.15);
+}
+
+.list-card tbody tr:hover {
+  background: rgba(23, 130, 60, 0.02);
+}
+
+.list-card a {
+  color: var(--primary);
+  font-weight: 700;
+  transition: color 0.2s;
+}
+
+.list-card a:hover {
+  color: var(--primary-dark);
+}
+
 .list-item {
   background: rgba(255,255,255,0.82);
   border: 1px solid rgba(255,255,255,0.75);
@@ -1338,7 +1386,7 @@ body.official-page {
 
   .row {
     flex-direction: column;
-    gap: 0;
+    gap: 12px;
   }
 
   .lembar-surat {
@@ -1408,6 +1456,11 @@ body.official-page {
   .hero-btn {
     width: 100%;
     max-width: 240px;
+  }
+
+  .dashboard-cards {
+    grid-template-columns: 1fr;
+    gap: 16px;
   }
 }
 
