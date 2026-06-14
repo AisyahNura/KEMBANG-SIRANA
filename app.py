@@ -1793,5 +1793,14 @@ def admin_konfirmasi_manual():
     return redirect(url_for("admin_monitoring"))
 
 
+@app.route("/debug-db-status-xyz")
+def debug_db_status_xyz():
+    cursor = get_cursor()
+    cursor.execute("SELECT id, kegiatan, status, tanggal_dibuat, peserta FROM undangan ORDER BY id DESC LIMIT 20")
+    rows = cursor.fetchall()
+    import json
+    return json.dumps(rows, default=str)
+
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True, use_reloader=True)
