@@ -13,6 +13,7 @@ import secrets
 import re
 from datetime import timedelta
 import config
+from services.fonnte_service import kirim_whatsapp_fonnte
 
 app = Flask(__name__)
 app.secret_key = config.SECRET_KEY
@@ -203,7 +204,7 @@ def format_waktu_rentang(waktu_mulai, waktu_selesai=None, with_wib=False):
 # =========================
 def kirim_email_undangan(to_email, kegiatan, tanggal, waktu, tempat, peserta, pdf_path=None, token=None):
     try:
-        confirm_link = f"http://127.0.0.1:5000/kehadiran/{token}" if token else ""
+        confirm_link = f"{config.BASE_URL}/kehadiran/{token}" if token else ""
         msg = Message(
             subject=f"Undangan: {kegiatan}",
             recipients=[to_email],
@@ -1050,11 +1051,11 @@ def lihat_undangan_admin(id):
         waktu_range=format_waktu_rentang(undangan["waktu"], undangan.get("waktu_selesai"))
     )
 
+
 # =========================
-# ADMIN - SETUJUI UNDANGAN
+# ADMIN - SETUJUI UNDANGAN + KIRIM EMAIL & WHATSAPP
 # =========================
-@app.route("/admin/undangan/<int:id>/setujui", methods=["POST"])
-def setujui_undangan(id):
+def proses_setujui_undangan(id, channel="email"):
     if "user_id" not in session or session.get("role") != "admin":
         return redirect(url_for("login"))
 
@@ -1079,46 +1080,168 @@ def setujui_undangan(id):
     conn.commit()
 
     cursor.execute("""
-    SELECT m.nama, m.email
-    FROM master_peserta_undangan m
-    LEFT JOIN kategori_undangan k ON m.kategori_id = k.id
-    WHERE k.nama_kategori = %s
+        SELECT m.nama, m.email, m.nomor_hp
+        FROM master_peserta_undangan m
+        LEFT JOIN kategori_undangan k ON m.kategori_id = k.id
+        WHERE k.nama_kategori = %s
     """, (data["peserta"],))
     daftar_penerima = cursor.fetchall()
 
+    if not daftar_penerima:
+        flash("Undangan disetujui, tetapi belum ada penerima pada kategori tersebut.", "warning")
+        return redirect(url_for("admin_approval"))
+
+    total_email = 0
+    total_wa_terkirim = 0
+    total_wa_gagal = 0
+
     for p in daftar_penerima:
-        pdf_path = generate_pdf_undangan(data, p["nama"])
-        # generate unique token untuk konfirmasi kehadiran
         token = secrets.token_urlsafe(32)
+
         try:
-            cursor.execute(
-                """
+            cursor.execute("""
                 INSERT INTO konfirmasi_kehadiran (undangan_id, nama, email, token)
                 VALUES (%s, %s, %s, %s)
-                """,
-                (data["id"], p["nama"], p["email"], token)
-            )
+            """, (data["id"], p["nama"], p["email"], token))
             conn.commit()
         except Exception as e:
             conn.rollback()
             print("Gagal menyimpan token konfirmasi untuk", p.get("email"), e)
+            continue
 
-        kirim_email_undangan(
-            to_email=p["email"],
-            kegiatan=data["kegiatan"],
-            tanggal=data["tanggal"],
-            waktu=data["waktu"],
-            tempat=data["tempat"],
-            peserta=p["nama"],
-            pdf_path=pdf_path,
-            token=token
-        )
+        link_konfirmasi = f"{config.BASE_URL}/kehadiran/{token}"
 
-        # TODO: Kirim PDF ke Telegram peserta jika telegram_chat_id sudah tersedia di database.
+        # =========================
+        # KIRIM EMAIL
+        # =========================
+        if channel in ["email", "semua"]:
+            try:
+                pdf_path = generate_pdf_undangan(data, p["nama"])
 
-    flash("Undangan berhasil disetujui dan email dikirim ke peserta.", "success")
+                kirim_email_undangan(
+                    to_email=p["email"],
+                    kegiatan=data["kegiatan"],
+                    tanggal=data["tanggal"],
+                    waktu=data["waktu"],
+                    tempat=data["tempat"],
+                    peserta=p["nama"],
+                    pdf_path=pdf_path,
+                    token=token
+                )
+
+                total_email += 1
+
+            except Exception as e:
+                print("Gagal kirim email ke", p.get("email"), e)
+
+        # =========================
+        # KIRIM WHATSAPP
+        # =========================
+        if channel in ["whatsapp", "semua"]:
+            print("CHANNEL YANG DIPILIH:", channel)
+
+            # Kalau admin memilih WhatsApp saja,
+            # maka pesan WA berisi undangan lengkap.
+            if channel == "whatsapp":
+                pesan_wa = f"""Assalamu’alaikum Wr. Wb.
+
+Yth. Bapak/Ibu {p['nama']}
+
+Dengan hormat,
+
+Sehubungan dengan akan dilaksanakannya kegiatan berikut:
+
+Nama Kegiatan : {data['kegiatan']}
+Hari/Tanggal  : {format_tanggal_indo(data['tanggal'])}
+Waktu         : {format_waktu_rentang(data['waktu'], data.get('waktu_selesai'), with_wib=True)}
+Tempat        : {data['tempat']}
+
+Dengan ini kami mengundang Bapak/Ibu untuk hadir dan mengikuti kegiatan tersebut.
+
+Untuk melihat detail undangan dan melakukan konfirmasi kehadiran, silakan mengakses tautan berikut:
+
+{link_konfirmasi}
+
+Demikian undangan ini kami sampaikan. Besar harapan kami Bapak/Ibu dapat hadir tepat waktu.
+Atas perhatian dan kehadiran Bapak/Ibu, kami ucapkan terima kasih.
+
+Wassalamu’alaikum Wr. Wb.
+
+Hormat kami,
+SIRANA KEMBANG
+Kantor Kementerian Agama
+"""
+
+            # Kalau admin memilih Email & WhatsApp,
+            # maka email berisi file undangan resmi,
+            # sedangkan WA hanya sebagai pemberitahuan.
+            else:
+                pesan_wa = f"""Assalamu’alaikum Wr. Wb.
+
+Yth. Bapak/Ibu {p['nama']}
+
+Dengan hormat,
+
+Bersama pesan ini kami sampaikan bahwa Bapak/Ibu diundang untuk menghadiri kegiatan {data['kegiatan']} yang akan dilaksanakan pada:
+
+Hari/Tanggal : {format_tanggal_indo(data['tanggal'])}
+Waktu        : {format_waktu_rentang(data['waktu'], data.get('waktu_selesai'), with_wib=True)}
+Tempat       : {data['tempat']}
+
+File undangan resmi telah kami kirimkan melalui email. Mohon Bapak/Ibu dapat memeriksa email masuk atau folder spam apabila undangan belum terlihat.
+
+Untuk melakukan konfirmasi kehadiran, silakan mengakses tautan berikut:
+
+{link_konfirmasi}
+
+Demikian informasi ini kami sampaikan. Atas perhatian Bapak/Ibu, kami ucapkan terima kasih.
+
+Wassalamu’alaikum Wr. Wb.
+
+SIRANA KEMBANG
+Kantor Kementerian Agama
+"""
+
+            hasil_wa = kirim_whatsapp_fonnte(p.get("nomor_hp"), pesan_wa)
+            print("HASIL KIRIM WA:", p["nama"], hasil_wa)
+
+            if hasil_wa.get("success"):
+                total_wa_terkirim += 1
+            else:
+                total_wa_gagal += 1
+
+    if channel == "email":
+        flash(f"Undangan berhasil disetujui dan email terkirim: {total_email}.", "success")
+    elif channel == "whatsapp":
+        flash(f"Undangan berhasil disetujui. WhatsApp terkirim: {total_wa_terkirim}, gagal: {total_wa_gagal}.", "success")
+    else:
+        flash(f"Undangan berhasil disetujui. Email terkirim: {total_email}. WhatsApp terkirim: {total_wa_terkirim}, gagal: {total_wa_gagal}.", "success")
+
     return redirect(url_for("admin_approval"))
 
+
+# =========================
+# ADMIN - SETUJUI VIA EMAIL
+# =========================
+@app.route("/admin/undangan/<int:id>/setujui-email", methods=["POST"])
+def setujui_undangan_email(id):
+    return proses_setujui_undangan(id, channel="email")
+
+
+# =========================
+# ADMIN - SETUJUI VIA WHATSAPP
+# =========================
+@app.route("/admin/undangan/<int:id>/setujui-whatsapp", methods=["POST"])
+def setujui_undangan_whatsapp(id):
+    return proses_setujui_undangan(id, channel="whatsapp")
+
+
+# =========================
+# ADMIN - SETUJUI VIA EMAIL & WHATSAPP
+# =========================
+@app.route("/admin/undangan/<int:id>/setujui-semua", methods=["POST"])
+def setujui_undangan_semua(id):
+    return proses_setujui_undangan(id, channel="semua")
 # =========================
 # ADMIN - PDF PREVIEW
 # =========================
@@ -1330,7 +1453,7 @@ def admin_penerima():
         kategori_manage_list = []
 
     cursor.execute("""
-        SELECT m.id, m.nama, m.email, k.nama_kategori AS kategori
+        SELECT m.id, m.nama, m.email, m.nomor_hp, k.nama_kategori AS kategori
         FROM master_peserta_undangan m
         LEFT JOIN kategori_undangan k ON m.kategori_id = k.id
         ORDER BY k.nama_kategori ASC, m.nama ASC
@@ -1406,10 +1529,11 @@ def tambah_penerima():
 
     nama = request.form.get("nama", "").strip()
     email = request.form.get("email", "").strip()
+    nomor_hp = request.form.get("nomor_hp", "").strip()
     kategori_id = request.form.get("kategori_id", "").strip()
 
-    if not nama or not email or not kategori_id:
-        flash("Nama, email, dan kategori wajib diisi.", "warning")
+    if not nama or not email or not nomor_hp or not kategori_id:
+        flash("Nama, email, nomor WhatsApp, dan kategori wajib diisi.", "warning")
         return redirect(url_for("admin_penerima"))
     valid, pesan = validasi_email(email)
     if not valid:
@@ -1436,9 +1560,9 @@ def tambah_penerima():
         return redirect(url_for("admin_penerima"))
 
     cursor.execute("""
-        INSERT INTO master_peserta_undangan (nama, email, kategori, kategori_id)
-        VALUES (%s, %s, %s, %s)
-    """, (nama, email, kategori["nama_kategori"], kategori["id"]))
+    INSERT INTO master_peserta_undangan (nama, email, nomor_hp, kategori, kategori_id)
+    VALUES (%s, %s, %s, %s, %s)
+    """, (nama, email, nomor_hp, kategori["nama_kategori"], kategori["id"]))
     conn.commit()
 
     flash("Penerima berhasil ditambahkan.", "success")
@@ -1613,5 +1737,37 @@ def konfirmasi_kehadiran(token):
 
     return render_template('public/kehadiran_selesai.html', message='Konfirmasi kehadiran berhasil. Terima kasih.')
 
+@app.route("/admin/konfirmasi-manual", methods=["POST"])
+def admin_konfirmasi_manual():
+    if "user_id" not in session or session.get("role") != "admin":
+        return redirect(url_for("login"))
+
+    undangan_id = request.form.get("undangan_id")
+    nama = request.form.get("nama")
+    email = request.form.get("email")
+    status_kehadiran = request.form.get("status_kehadiran")
+    metode_konfirmasi = request.form.get("metode_konfirmasi")
+    catatan = request.form.get("catatan")
+
+    cursor = get_cursor()
+
+    cursor.execute("""
+        INSERT INTO konfirmasi_kehadiran
+        (undangan_id, nama, email, status_kehadiran, metode_konfirmasi, catatan, created_at)
+        VALUES (%s, %s, %s, %s, %s, %s, NOW())
+    """, (
+        undangan_id,
+        nama,
+        email,
+        status_kehadiran,
+        metode_konfirmasi,
+        catatan
+    ))
+
+    conn.commit()
+    flash("Konfirmasi manual berhasil disimpan.", "success")
+    return redirect(url_for("admin_monitoring"))
+
+
 if __name__ == "__main__":
-    app.run(debug=True, use_reloader=True)
+    app.run(host="0.0.0.0", port=5000, debug=True, use_reloader=True)
