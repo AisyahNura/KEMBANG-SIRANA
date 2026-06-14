@@ -26,7 +26,7 @@ UPLOAD_FOLDER = "uploads/audio"
 OUTPUT_PDF_FOLDER = "outputs/pdf"
 OUTPUT_NOTULENSI_FOLDER = "outputs/notulensi"
 
-BASE_URL = "http://127.0.0.1:5000"
+BASE_URL = os.getenv("BASE_URL", "http://127.0.0.1:5000")
 FONNTE_TOKEN = "tMBb8detcMKKmcAnd5tW"
 
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
