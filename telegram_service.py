@@ -3,6 +3,9 @@ from config import TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID
 
 
 def kirim_pesan_telegram(pesan):
+    if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
+        raise RuntimeError("Telegram belum dikonfigurasi")
+
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
 
     data = {
@@ -15,6 +18,9 @@ def kirim_pesan_telegram(pesan):
 
 
 def kirim_file_telegram(file_path, caption=""):
+    if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
+        raise RuntimeError("Telegram belum dikonfigurasi")
+
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendDocument"
 
     with open(file_path, "rb") as file:

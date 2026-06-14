@@ -47,12 +47,13 @@
 
         <form action="{{ url_for('tambah_kategori') }}" method="POST" class="form-penerima">
           <div class="form-row">
-            <input type="text" name="nama_kategori" placeholder="Masukkan nama kategori" required>
+            <input type="text" name="nama_kategori" placeholder="Masukkan nama kategori penerima" required>
             <button type="submit" class="action-btn view-btn">Tambah Kategori</button>
           </div>
         </form>
       </section>
 
+      <!-- DAFTAR KATEGORI -->
       {% if kategori_has_status and kategori_manage_list %}
       <section class="table-section" style="margin-bottom: 30px;">
         <div class="section-title pending-title">Daftar Kategori Penerima</div>
@@ -73,9 +74,9 @@
               <td>{{ item.nama_kategori }}</td>
               <td>
                 {% if item.is_active == 1 %}
-                  Aktif
+                  <span class="badge approved">Aktif</span>
                 {% else %}
-                  Nonaktif
+                  <span class="badge rejected">Nonaktif</span>
                 {% endif %}
               </td>
               <td>
@@ -83,11 +84,13 @@
                   <form action="{{ url_for('nonaktifkan_kategori', id=item.id) }}" method="POST" onsubmit="return confirm('Nonaktifkan kategori ini?')">
                     <button type="submit" class="action-btn reject-btn">Nonaktifkan</button>
                   </form>
-                  <small style="display:block; margin-top:6px; color:#6b7280;">Hapus aktif tidak diizinkan</small>
+                  <small style="display:block; margin-top:6px; color:#6b7280;">
+                    Kategori aktif tidak dapat langsung dihapus.
+                  </small>
                 {% else %}
-                <form action="{{ url_for('hapus_kategori', id=item.id) }}" method="POST" onsubmit="return confirm('Hapus kategori nonaktif ini permanen?')">
-                  <button type="submit" class="action-btn reject-btn">Hapus</button>
-                </form>
+                  <form action="{{ url_for('hapus_kategori', id=item.id) }}" method="POST" onsubmit="return confirm('Hapus kategori nonaktif ini secara permanen?')">
+                    <button type="submit" class="action-btn reject-btn">Hapus</button>
+                  </form>
                 {% endif %}
               </td>
             </tr>
@@ -104,8 +107,15 @@
         <form action="{{ url_for('tambah_penerima') }}" method="POST" class="form-penerima">
           <div class="form-row">
             <input type="text" name="nama" placeholder="Nama penerima" required>
+
             <input type="email" name="email" placeholder="Email penerima" required>
-            <input type="text" name="nomor_hp" placeholder="Nomor HP penerima">
+
+            <input
+              type="text"
+              name="nomor_hp"
+              placeholder="Nomor WhatsApp, contoh: 081234567890"
+              required
+            >
 
             <select name="kategori_id" required>
               <option value="">Pilih kategori</option>
@@ -117,6 +127,11 @@
             <button type="submit" class="action-btn view-btn">Tambah Penerima</button>
           </div>
         </form>
+
+        <small style="display:block; margin-top:10px; color:#6b7280;">
+          Nomor WhatsApp digunakan untuk pengiriman undangan otomatis melalui Fonnte.
+          Gunakan format 08xxxxxxxxxx atau 62xxxxxxxxxx.
+        </small>
       </section>
 
       <!-- DAFTAR PENERIMA -->
@@ -138,11 +153,12 @@
               <th>No</th>
               <th>Nama</th>
               <th>Email</th>
-              <th>Nomor HP</th>
+              <th>Nomor WhatsApp</th>
               <th>Kategori</th>
               <th>Aksi</th>
             </tr>
           </thead>
+
           <tbody id="tabelPenerima">
             {% if daftar_penerima %}
               {% for item in daftar_penerima %}
@@ -153,7 +169,7 @@
                 <td>{{ item.nomor_hp if item.nomor_hp else '-' }}</td>
                 <td>{{ item.kategori }}</td>
                 <td>
-                  <form action="{{ url_for('hapus_penerima', id=item.id) }}" method="POST" onsubmit="return confirm('Yakin hapus data ini?')">
+                  <form action="{{ url_for('hapus_penerima', id=item.id) }}" method="POST" onsubmit="return confirm('Yakin ingin menghapus data penerima ini?')">
                     <button type="submit" class="action-btn reject-btn">Hapus</button>
                   </form>
                 </td>

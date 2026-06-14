@@ -21,7 +21,7 @@
           <li><a href="{{ url_for('admin_dashboard') }}">Dashboard</a></li>
           <li><a href="{{ url_for('admin_approval') }}" class="active">Persetujuan Undangan</a></li>
           <li><a href="{{ url_for('admin_monitoring') }}">Monitoring</a></li>
-            <li><a href="{{ url_for('admin_penerima') }}">Kelola Penerima</a></li>
+          <li><a href="{{ url_for('admin_penerima') }}">Kelola Penerima</a></li>
         </ul>
       </div>
 
@@ -41,6 +41,15 @@
         >
       </div>
 
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, message in messages %}
+            <div class="flash-message {{ category }}">{{ message }}</div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+
+      <!-- MENUNGGU PERSETUJUAN -->
       <section class="table-section">
         <div class="section-title pending-title">Menunggu Persetujuan</div>
 
@@ -58,6 +67,7 @@
               <th>Aksi</th>
             </tr>
           </thead>
+
           <tbody id="pendingTableBody">
             {% if pending_undangan %}
               {% for undangan in pending_undangan %}
@@ -77,36 +87,47 @@
                 <td><span class="badge pending">Pending</span></td>
                 <td>
                   <div class="action-group">
-  <!-- tombol lihat -->
-  <a class="action-btn view-btn" href="{{ url_for('lihat_undangan_admin', id=undangan.id) }}">Lihat</a>
+                    <a class="action-btn view-btn" href="{{ url_for('lihat_undangan_admin', id=undangan.id) }}">
+                      Lihat
+                    </a>
 
-  <!-- dropdown -->
-  <div class="dropdown">
-    <button class="action-btn dropdown-btn">Aksi ▾</button>
+                    <div class="dropdown">
+                      <button type="button" class="action-btn dropdown-btn">Aksi ▾</button>
 
-    <div class="dropdown-menu">
-      <form action="{{ url_for('setujui_undangan', id=undangan.id) }}" method="POST">
-        <button type="submit" class="dropdown-item approve">
-          <span class="dropdown-item-title">Setujui via Email</span>
-          <span class="dropdown-item-subtitle">Kirim melalui email</span>
-        </button>
-      </form>
+                      <div class="dropdown-menu">
 
-      <button type="button" class="dropdown-item approve is-disabled" disabled title="Belum dihubungkan ke backend Telegram">
-        <span class="dropdown-item-title">Setujui via Telegram</span>
-        <span class="dropdown-item-subtitle">Sedang disiapkan</span>
-      </button>
+                        <form action="{{ url_for('setujui_undangan_email', id=undangan.id) }}" method="POST">
+                          <button type="submit" class="dropdown-item approve">
+                            <span class="dropdown-item-title">Setujui via Email</span>
+                            <span class="dropdown-item-subtitle">Kirim PDF dan link konfirmasi via email</span>
+                          </button>
+                        </form>
 
-      <form action="{{ url_for('tolak_undangan', id=undangan.id) }}" method="POST">
-        <input type="hidden" name="catatan_admin" value="Ditolak admin">
-        <button type="submit" class="dropdown-item reject">
-          <span class="dropdown-item-title">Tolak</span>
-          <span class="dropdown-item-subtitle">Batalkan undangan</span>
-        </button>
-      </form>
-    </div>
-  </div>
-</div>
+                        <form action="{{ url_for('setujui_undangan_whatsapp', id=undangan.id) }}" method="POST">
+                          <button type="submit" class="dropdown-item approve">
+                            <span class="dropdown-item-title">Setujui via WhatsApp</span>
+                            <span class="dropdown-item-subtitle">Kirim teks undangan dan link konfirmasi via WhatsApp</span>
+                          </button>
+                        </form>
+
+                        <form action="{{ url_for('setujui_undangan_semua', id=undangan.id) }}" method="POST">
+                          <button type="submit" class="dropdown-item approve">
+                            <span class="dropdown-item-title">Setujui via Email & WhatsApp</span>
+                            <span class="dropdown-item-subtitle">Kirim undangan ke dua platform sekaligus</span>
+                          </button>
+                        </form>
+
+                        <form action="{{ url_for('tolak_undangan', id=undangan.id) }}" method="POST">
+                          <input type="hidden" name="catatan_admin" value="Ditolak admin">
+                          <button type="submit" class="dropdown-item reject">
+                            <span class="dropdown-item-title">Tolak</span>
+                            <span class="dropdown-item-subtitle">Batalkan undangan</span>
+                          </button>
+                        </form>
+
+                      </div>
+                    </div>
+                  </div>
                 </td>
               </tr>
               {% endfor %}
@@ -119,6 +140,7 @@
         </table>
       </section>
 
+      <!-- SUDAH DISETUJUI -->
       <section class="table-section">
         <div class="section-title approved-title">Sudah Disetujui</div>
 
@@ -136,6 +158,7 @@
               <th>Aksi</th>
             </tr>
           </thead>
+
           <tbody id="approvedTableBody">
             {% if approved_undangan %}
               {% for undangan in approved_undangan %}
@@ -155,7 +178,9 @@
                 <td><span class="badge approved">Approved</span></td>
                 <td>
                   <div class="action-group">
-                    <a class="action-btn view-btn" href="{{ url_for('lihat_undangan_admin', id=undangan.id) }}">Lihat</a>
+                    <a class="action-btn view-btn" href="{{ url_for('lihat_undangan_admin', id=undangan.id) }}">
+                      Lihat
+                    </a>
                   </div>
                 </td>
               </tr>
@@ -175,39 +200,37 @@
     const searchInput = document.getElementById("searchUndangan");
     const allRows = document.querySelectorAll(".undangan-row");
 
-    searchInput.addEventListener("keyup", function () {
-      const keyword = this.value.toLowerCase().trim();
+    if (searchInput) {
+      searchInput.addEventListener("keyup", function () {
+        const keyword = this.value.toLowerCase().trim();
 
-      allRows.forEach(function (row) {
-        const rowText = row.innerText.toLowerCase();
-        row.style.display = rowText.includes(keyword) ? "" : "none";
+        allRows.forEach(function (row) {
+          const rowText = row.innerText.toLowerCase();
+          row.style.display = rowText.includes(keyword) ? "" : "none";
+        });
+      });
+    }
+
+    document.querySelectorAll(".dropdown-btn").forEach(function (btn) {
+      btn.addEventListener("click", function (e) {
+        e.stopPropagation();
+
+        document.querySelectorAll(".dropdown-menu").forEach(function (menu) {
+          if (menu !== btn.nextElementSibling) {
+            menu.style.display = "none";
+          }
+        });
+
+        const menu = btn.nextElementSibling;
+        menu.style.display = menu.style.display === "flex" ? "none" : "flex";
       });
     });
 
-  document.querySelectorAll('.dropdown-btn').forEach(btn => {
-    btn.addEventListener('click', function (e) {
-      e.stopPropagation();
-
-      // tutup semua dropdown lain
-      document.querySelectorAll('.dropdown-menu').forEach(menu => {
-        if (menu !== this.nextElementSibling) {
-          menu.style.display = 'none';
-        }
+    document.addEventListener("click", function () {
+      document.querySelectorAll(".dropdown-menu").forEach(function (menu) {
+        menu.style.display = "none";
       });
-
-      // toggle dropdown
-      const menu = this.nextElementSibling;
-      menu.style.display = menu.style.display === 'flex' ? 'none' : 'flex';
     });
-  });
-
-  // klik luar → tutup dropdown
-  document.addEventListener('click', function () {
-    document.querySelectorAll('.dropdown-menu').forEach(menu => {
-      menu.style.display = 'none';
-    });
-  });
-
   </script>
 
   <script src="{{ url_for('static', filename='js/admin.js') }}"></script>

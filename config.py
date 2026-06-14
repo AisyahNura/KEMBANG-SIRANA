@@ -25,10 +25,9 @@ UPLOAD_FOLDER = "uploads/audio"
 OUTPUT_PDF_FOLDER = "outputs/pdf"
 OUTPUT_NOTULENSI_FOLDER = "outputs/notulensi"
 
-TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
-if not TELEGRAM_BOT_TOKEN:
-    raise ValueError("TELEGRAM_BOT_TOKEN environment variable is required")
+BASE_URL = "http://127.0.0.1:5000"
+FONNTE_TOKEN = "tMBb8detcMKKmcAnd5tW"
 
-TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
-if not TELEGRAM_CHAT_ID:
-    raise ValueError("TELEGRAM_CHAT_ID environment variable is required")
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
+TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "")
+

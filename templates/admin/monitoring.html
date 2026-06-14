@@ -21,7 +21,7 @@
           <li><a href="{{ url_for('admin_dashboard') }}">Dashboard</a></li>
           <li><a href="{{ url_for('admin_approval') }}">Persetujuan Undangan</a></li>
           <li><a href="{{ url_for('admin_monitoring') }}" class="active">Monitoring</a></li>
-            <li><a href="{{ url_for('admin_penerima') }}">Kelola Penerima</a></li>
+          <li><a href="{{ url_for('admin_penerima') }}">Kelola Penerima</a></li>
         </ul>
       </div>
 
@@ -35,6 +35,7 @@
         <h1>Monitoring Undangan Bulanan</h1>
       </div>
 
+      <!-- FILTER DAN STATISTIK -->
       <section class="table-section monitoring-hero">
         <div class="monitoring-filter-wrap">
           <form method="GET" class="monitoring-filter-form">
@@ -78,6 +79,7 @@
             <strong>{{ monthly_summary.rejected or 0 }}</strong>
           </article>
         </div>
+
         <div class="monitoring-stats" style="margin-top:12px">
           <article class="mini-summary">
             <span>Total Hadir</span>
@@ -94,6 +96,7 @@
         </div>
       </section>
 
+      <!-- DAFTAR UNDANGAN -->
       <section class="table-section">
         <div class="section-title approved-title">Daftar Undangan Bulan Terpilih</div>
         <table>
@@ -140,6 +143,122 @@
         </table>
       </section>
 
+      <!-- INPUT KONFIRMASI MANUAL -->
+      <section class="table-section">
+        <div class="section-title approved-title">Input Konfirmasi Manual</div>
+
+        <p style="font-size:13px; color:#64748b; margin-bottom:16px; line-height:1.6;">
+          Form ini digunakan admin untuk mencatat konfirmasi peserta yang tidak dapat mengakses WhatsApp, email,
+          atau link konfirmasi secara mandiri. Contohnya peserta dikonfirmasi melalui telepon, SMS, surat, atau lisan.
+        </p>
+
+        <form method="POST" action="{{ url_for('admin_konfirmasi_manual') }}" class="manual-confirm-form">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="undangan_id">Pilih Undangan</label>
+              <select name="undangan_id" id="undangan_id" required>
+                <option value="">Pilih undangan</option>
+                {% for undangan in undangan_bulanan %}
+                  <option value="{{ undangan.id }}">
+                    {{ undangan.kegiatan }} - {{ undangan.tanggal.strftime('%d-%m-%Y') if undangan.tanggal else '-' }} - {{ undangan.tempat }}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="nama">Nama Peserta</label>
+              <input type="text" name="nama" id="nama" placeholder="Masukkan nama peserta" required>
+            </div>
+
+            <div class="form-group">
+              <label for="email">Email Peserta</label>
+              <input type="email" name="email" id="email" placeholder="Opsional jika tidak ada email">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="status_kehadiran">Status Kehadiran</label>
+              <select name="status_kehadiran" id="status_kehadiran" required>
+                <option value="">Pilih status</option>
+                <option value="hadir">Hadir</option>
+                <option value="tidak_hadir">Tidak Hadir</option>
+                <option value="diwakilkan">Diwakilkan</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="metode_konfirmasi">Metode Konfirmasi</label>
+              <select name="metode_konfirmasi" id="metode_konfirmasi" required>
+                <option value="">Pilih metode</option>
+                <option value="Telepon">Telepon</option>
+                <option value="SMS">SMS</option>
+                <option value="Lisan">Lisan</option>
+                <option value="Surat">Surat</option>
+                <option value="Admin Manual">Admin Manual</option>
+                <option value="Lainnya">Lainnya</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="catatan">Catatan</label>
+              <input type="text" name="catatan" id="catatan" placeholder="Contoh: peserta dikonfirmasi melalui telepon">
+            </div>
+          </div>
+
+          <button type="submit" class="export-btn">Simpan Konfirmasi Manual</button>
+        </form>
+      </section>
+
+      <!-- KONFIRMASI KEHADIRAN -->
+      <section class="table-section">
+        <div class="section-title approved-title">Konfirmasi Kehadiran Peserta</div>
+        <table>
+          <thead>
+            <tr>
+              <th>No</th>
+              <th>Waktu Konfirmasi</th>
+              <th>Nama</th>
+              <th>Email</th>
+              <th>Status</th>
+              <th>Metode</th>
+              <th>Catatan</th>
+              <th>Undangan</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for k in konfirmasi_list %}
+              <tr>
+                <td>{{ loop.index }}</td>
+                <td>{{ k.created_at.strftime('%d-%m-%Y %H:%M') if k.created_at else '-' }}</td>
+                <td>{{ k.nama or '-' }}</td>
+                <td>{{ k.email or '-' }}</td>
+                <td>
+                  {% if k.status_kehadiran == 'hadir' %}
+                    <span class="badge hadir">Hadir</span>
+                  {% elif k.status_kehadiran == 'tidak_hadir' %}
+                    <span class="badge rejected">Tidak Hadir</span>
+                  {% elif k.status_kehadiran == 'diwakilkan' %}
+                    <span class="badge pending">Diwakilkan</span>
+                  {% else %}
+                    <span class="badge">Belum</span>
+                  {% endif %}
+                </td>
+                <td>{{ k.metode_konfirmasi or 'Link Website' }}</td>
+                <td>{{ k.catatan or '-' }}</td>
+                <td>{{ k.kegiatan or '-' }}</td>
+              </tr>
+            {% else %}
+              <tr>
+                <td colspan="8" style="text-align:center;">Belum ada konfirmasi untuk bulan ini.</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </section>
+
+      <!-- RIWAYAT AKTIVITAS UMUM DIPINDAH KE BAWAH AGAR FORM MANUAL TERLIHAT -->
       <section class="table-section">
         <div class="section-title pending-title">Riwayat Aktivitas Umum</div>
         <table>
@@ -174,47 +293,6 @@
             {% else %}
               <tr>
                 <td colspan="4" style="text-align:center;">Belum ada aktivitas.</td>
-              </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </section>
-      <section class="table-section">
-        <div class="section-title approved-title">Konfirmasi Kehadiran Peserta</div>
-        <table>
-          <thead>
-            <tr>
-              <th>No</th>
-              <th>Waktu Konfirmasi</th>
-              <th>Nama</th>
-              <th>Email</th>
-              <th>Status</th>
-              <th>Undangan</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for k in konfirmasi_list %}
-              <tr>
-                <td>{{ loop.index }}</td>
-                <td>{{ k.created_at.strftime('%d-%m-%Y %H:%M') if k.created_at else '-' }}</td>
-                <td>{{ k.nama or '-' }}</td>
-                <td>{{ k.email or '-' }}</td>
-                <td>
-                  {% if k.status_kehadiran == 'hadir' %}
-                    <span class="badge hadir">Hadir</span>
-                  {% elif k.status_kehadiran == 'tidak_hadir' %}
-                    <span class="badge rejected">Tidak Hadir</span>
-                  {% elif k.status_kehadiran == 'diwakilkan' %}
-                    <span class="badge pending">Diwakilkan</span>
-                  {% else %}
-                    <span class="badge">Belum</span>
-                  {% endif %}
-                </td>
-                <td>{{ k.kegiatan or '-' }}</td>
-              </tr>
-            {% else %}
-              <tr>
-                <td colspan="6" style="text-align:center;">Belum ada konfirmasi untuk bulan ini.</td>
               </tr>
             {% endfor %}
           </tbody>
