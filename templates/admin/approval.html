@@ -33,35 +33,14 @@
 
     <main class="main-content">
 
-      <!-- HEADER -->
       <div class="approval-header">
-        <div class="approval-header-top">
-          <h1>📋 Persetujuan Undangan</h1>
-          <input
-            type="text"
-            id="searchUndangan"
-            class="search-box"
-            placeholder="🔍  Cari kegiatan, pembuat, tempat..."
-          >
-        </div>
-
-        <!-- STATS PILLS -->
-        <div class="approval-stats">
-          <div class="stat-pill pending-pill">
-            <span class="stat-pill-icon">⏳</span>
-            <div>
-              <span class="stat-pill-count">{{ pending_undangan|length if pending_undangan else 0 }}</span>
-              <span class="stat-pill-label">Menunggu</span>
-            </div>
-          </div>
-          <div class="stat-pill approved-pill">
-            <span class="stat-pill-icon">✅</span>
-            <div>
-              <span class="stat-pill-count">{{ approved_undangan|length if approved_undangan else 0 }}</span>
-              <span class="stat-pill-label">Disetujui</span>
-            </div>
-          </div>
-        </div>
+        <h1>Persetujuan Undangan</h1>
+        <input
+          type="text"
+          id="searchUndangan"
+          class="search-box"
+          placeholder="Cari kegiatan, pembuat, tempat..."
+        >
       </div>
 
       {% with messages = get_flashed_messages(with_categories=true) %}
@@ -72,112 +51,76 @@
         {% endif %}
       {% endwith %}
 
+      <!-- LOADING OVERLAY -->
+      <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-box">
+          <div class="spinner"></div>
+          <p>Sedang memproses, mohon tunggu...</p>
+        </div>
+      </div>
+
       <!-- TAB NAVIGATION -->
       <div class="approval-tabs">
         <button class="tab-btn active" data-tab="pending">
-          ⏳ Menunggu Persetujuan
+          Menunggu
           {% if pending_undangan %}
             <span class="tab-count pending-count">{{ pending_undangan|length }}</span>
           {% endif %}
         </button>
         <button class="tab-btn" data-tab="approved">
-          ✅ Sudah Disetujui
+          Disetujui
           {% if approved_undangan %}
             <span class="tab-count approved-count">{{ approved_undangan|length }}</span>
           {% endif %}
         </button>
       </div>
 
-      <!-- TAB: MENUNGGU PERSETUJUAN -->
+      <!-- TAB: MENUNGGU -->
       <div class="tab-panel active" id="tab-pending">
         {% if pending_undangan %}
           <div class="cards-grid">
             {% for undangan in pending_undangan %}
-            <div class="undangan-card pending-card undangan-row">
-              <div class="card-header-strip pending-strip"></div>
+            <div class="undangan-card undangan-row">
+              <div class="card-strip pending-strip"></div>
               <div class="card-body">
 
-                <!-- Card Top -->
                 <div class="card-top">
-                  <span class="badge-card pending">⏳ Pending</span>
+                  <span class="badge-sm pending">Pending</span>
                   <span class="card-date">{{ undangan.tanggal }}</span>
                 </div>
 
-                <!-- Card Title -->
                 <h3 class="card-title">{{ undangan.kegiatan }}</h3>
 
-                <!-- Card Info Grid -->
-                <div class="card-info-grid">
-                  <div class="info-item">
-                    <span class="info-icon">👤</span>
-                    <div>
-                      <span class="info-label">Pembuat</span>
-                      <span class="info-value">{{ undangan.pembuat }}</span>
-                    </div>
-                  </div>
-                  <div class="info-item">
-                    <span class="info-icon">🕐</span>
-                    <div>
-                      <span class="info-label">Waktu</span>
-                      <span class="info-value">
-                        {{ (undangan.waktu|string)[:5] }}
-                        {% if undangan.waktu_selesai %}
-                          – {{ (undangan.waktu_selesai|string)[:5] }}
-                        {% endif %}
-                      </span>
-                    </div>
-                  </div>
-                  <div class="info-item">
-                    <span class="info-icon">📍</span>
-                    <div>
-                      <span class="info-label">Tempat</span>
-                      <span class="info-value">{{ undangan.tempat }}</span>
-                    </div>
-                  </div>
-                  <div class="info-item">
-                    <span class="info-icon">👥</span>
-                    <div>
-                      <span class="info-label">Peserta</span>
-                      <span class="info-value">{{ undangan.peserta }}</span>
-                    </div>
-                  </div>
+                <div class="card-meta">
+                  <span>{{ undangan.pembuat }}</span>
+                  <span>{{ (undangan.waktu|string)[:5] }}{% if undangan.waktu_selesai %} – {{ (undangan.waktu_selesai|string)[:5] }}{% endif %}</span>
+                  <span>{{ undangan.tempat }}</span>
+                  <span>{{ undangan.peserta }}</span>
                 </div>
 
-                <!-- Separator -->
                 <div class="card-divider"></div>
 
-                <!-- Action Buttons -->
                 <div class="card-actions">
-                  <a class="card-action-btn view-action" href="{{ url_for('lihat_undangan_admin', id=undangan.id) }}">
-                    👁️ Lihat Detail
+                  <a class="btn btn-outline" href="{{ url_for('lihat_undangan_admin', id=undangan.id) }}">
+                    Lihat Detail
                   </a>
 
-                  <div class="card-action-row">
-                    <form action="{{ url_for('setujui_undangan_email', id=undangan.id) }}" method="POST">
-                      <button type="submit" class="card-action-btn approve-action email-action">
-                        📧 Setujui via Email
-                      </button>
+                  <div class="btn-row">
+                    <form action="{{ url_for('setujui_undangan_email', id=undangan.id) }}" method="POST" class="submit-form">
+                      <button type="submit" class="btn btn-approve">Email</button>
                     </form>
-
-                    <form action="{{ url_for('setujui_undangan_whatsapp', id=undangan.id) }}" method="POST">
-                      <button type="submit" class="card-action-btn approve-action wa-action">
-                        💬 Setujui via WhatsApp
-                      </button>
+                    <form action="{{ url_for('setujui_undangan_whatsapp', id=undangan.id) }}" method="POST" class="submit-form">
+                      <button type="submit" class="btn btn-approve">WhatsApp</button>
                     </form>
                   </div>
 
-                  <div class="card-action-row">
-                    <form action="{{ url_for('setujui_undangan_semua', id=undangan.id) }}" method="POST">
-                      <button type="submit" class="card-action-btn approve-action all-action">
-                        🚀 Setujui via Email & WhatsApp
-                      </button>
+                  <div class="btn-row">
+                    <form action="{{ url_for('setujui_undangan_semua', id=undangan.id) }}" method="POST" class="submit-form">
+                      <button type="submit" class="btn btn-approve-all">Email & WhatsApp</button>
                     </form>
-
-                    <form action="{{ url_for('tolak_undangan', id=undangan.id) }}" method="POST">
+                    <form action="{{ url_for('tolak_undangan', id=undangan.id) }}" method="POST" class="reject-form">
                       <input type="hidden" name="catatan_admin" value="Ditolak admin">
-                      <button type="submit" class="card-action-btn reject-action">
-                        ❌ Tolak Undangan
-                      </button>
+                      <button type="submit" class="btn btn-reject">Tolak</button>
                     </form>
                   </div>
                 </div>
@@ -188,75 +131,40 @@
           </div>
         {% else %}
           <div class="empty-state">
-            <span class="empty-icon">🎉</span>
             <h3>Semua Beres!</h3>
-            <p>Tidak ada undangan yang menunggu persetujuan saat ini.</p>
+            <p>Tidak ada undangan yang menunggu persetujuan.</p>
           </div>
         {% endif %}
       </div>
 
-      <!-- TAB: SUDAH DISETUJUI -->
+      <!-- TAB: DISETUJUI -->
       <div class="tab-panel" id="tab-approved">
         {% if approved_undangan %}
           <div class="cards-grid">
             {% for undangan in approved_undangan %}
-            <div class="undangan-card approved-card undangan-row">
-              <div class="card-header-strip approved-strip"></div>
+            <div class="undangan-card undangan-row">
+              <div class="card-strip approved-strip"></div>
               <div class="card-body">
 
-                <!-- Card Top -->
                 <div class="card-top">
-                  <span class="badge-card approved">✅ Disetujui</span>
+                  <span class="badge-sm approved">Disetujui</span>
                   <span class="card-date">{{ undangan.tanggal }}</span>
                 </div>
 
-                <!-- Card Title -->
                 <h3 class="card-title">{{ undangan.kegiatan }}</h3>
 
-                <!-- Card Info Grid -->
-                <div class="card-info-grid">
-                  <div class="info-item">
-                    <span class="info-icon">👤</span>
-                    <div>
-                      <span class="info-label">Pembuat</span>
-                      <span class="info-value">{{ undangan.pembuat }}</span>
-                    </div>
-                  </div>
-                  <div class="info-item">
-                    <span class="info-icon">🕐</span>
-                    <div>
-                      <span class="info-label">Waktu</span>
-                      <span class="info-value">
-                        {{ (undangan.waktu|string)[:5] }}
-                        {% if undangan.waktu_selesai %}
-                          – {{ (undangan.waktu_selesai|string)[:5] }}
-                        {% endif %}
-                      </span>
-                    </div>
-                  </div>
-                  <div class="info-item">
-                    <span class="info-icon">📍</span>
-                    <div>
-                      <span class="info-label">Tempat</span>
-                      <span class="info-value">{{ undangan.tempat }}</span>
-                    </div>
-                  </div>
-                  <div class="info-item">
-                    <span class="info-icon">👥</span>
-                    <div>
-                      <span class="info-label">Peserta</span>
-                      <span class="info-value">{{ undangan.peserta }}</span>
-                    </div>
-                  </div>
+                <div class="card-meta">
+                  <span>{{ undangan.pembuat }}</span>
+                  <span>{{ (undangan.waktu|string)[:5] }}{% if undangan.waktu_selesai %} – {{ (undangan.waktu_selesai|string)[:5] }}{% endif %}</span>
+                  <span>{{ undangan.tempat }}</span>
+                  <span>{{ undangan.peserta }}</span>
                 </div>
 
-                <!-- Separator -->
                 <div class="card-divider"></div>
 
-                <!-- Action Buttons -->
                 <div class="card-actions">
-                  <a class="card-action-btn view-action" href="{{ url_for('lihat_undangan_admin', id=undangan.id) }}">
-                    👁️ Lihat Detail
+                  <a class="btn btn-outline" href="{{ url_for('lihat_undangan_admin', id=undangan.id) }}">
+                    Lihat Detail
                   </a>
                 </div>
 
@@ -266,9 +174,8 @@
           </div>
         {% else %}
           <div class="empty-state">
-            <span class="empty-icon">📭</span>
             <h3>Belum Ada</h3>
-            <p>Belum ada undangan yang disetujui saat ini.</p>
+            <p>Belum ada undangan yang disetujui.</p>
           </div>
         {% endif %}
       </div>
@@ -277,40 +184,41 @@
   </div>
 
   <script>
-    // ===== TAB NAVIGATION =====
-    const tabBtns = document.querySelectorAll(".tab-btn");
-    const tabPanels = document.querySelectorAll(".tab-panel");
-
-    tabBtns.forEach(function (btn) {
+    // Tab navigation
+    document.querySelectorAll(".tab-btn").forEach(function (btn) {
       btn.addEventListener("click", function () {
-        tabBtns.forEach(function (b) { b.classList.remove("active"); });
-        tabPanels.forEach(function (p) { p.classList.remove("active"); });
-
+        document.querySelectorAll(".tab-btn").forEach(function (b) { b.classList.remove("active"); });
+        document.querySelectorAll(".tab-panel").forEach(function (p) { p.classList.remove("active"); });
         btn.classList.add("active");
         document.getElementById("tab-" + btn.dataset.tab).classList.add("active");
       });
     });
 
-    // ===== SEARCH =====
-    const searchInput = document.getElementById("searchUndangan");
-    const allRows = document.querySelectorAll(".undangan-row");
-
+    // Search
+    var searchInput = document.getElementById("searchUndangan");
     if (searchInput) {
       searchInput.addEventListener("keyup", function () {
-        const keyword = this.value.toLowerCase().trim();
-
-        allRows.forEach(function (row) {
-          const rowText = row.innerText.toLowerCase();
-          row.style.display = rowText.includes(keyword) ? "" : "none";
+        var keyword = this.value.toLowerCase().trim();
+        document.querySelectorAll(".undangan-row").forEach(function (row) {
+          row.style.display = row.innerText.toLowerCase().includes(keyword) ? "" : "none";
         });
       });
     }
 
-    // ===== CONFIRM REJECT =====
-    document.querySelectorAll(".reject-action").forEach(function(btn) {
-      btn.addEventListener("click", function(e) {
-        if (!confirm("Apakah Anda yakin ingin menolak undangan ini?")) {
+    // Loading overlay on form submit
+    document.querySelectorAll(".submit-form").forEach(function(form) {
+      form.addEventListener("submit", function() {
+        document.getElementById("loadingOverlay").classList.add("show");
+      });
+    });
+
+    // Confirm before reject
+    document.querySelectorAll(".reject-form").forEach(function(form) {
+      form.addEventListener("submit", function(e) {
+        if (!confirm("Yakin ingin menolak undangan ini?")) {
           e.preventDefault();
+        } else {
+          document.getElementById("loadingOverlay").classList.add("show");
         }
       });
     });
