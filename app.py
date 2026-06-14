@@ -11,6 +11,7 @@ from sqlalchemy import extract
 import base64
 import secrets
 import re
+import requests
 from datetime import timedelta
 import config
 from services.fonnte_service import kirim_whatsapp_fonnte
@@ -205,28 +206,51 @@ def format_waktu_rentang(waktu_mulai, waktu_selesai=None, with_wib=False):
 def kirim_email_undangan(to_email, kegiatan, tanggal, waktu, tempat, peserta, pdf_path=None, token=None):
     try:
         confirm_link = f"{config.BASE_URL}/kehadiran/{token}" if token else ""
-        msg = Message(
-            subject=f"Undangan: {kegiatan}",
-            recipients=[to_email],
-            html=f"""
-            <p>Yth. {peserta},</p>
-            <p>Terlampir kami kirimkan surat undangan kegiatan <b>{kegiatan}</b>.</p>
-            {f'<p>Silakan konfirmasi kehadiran Anda melalui link berikut: <a href="{confirm_link}">{confirm_link}</a></p>' if confirm_link else ''}
-            <p>Terima kasih.</p>
-            <p><b>Admin SIRANA KEMBANG</b></p>
-            """
-        )
 
+        html_content = f"""
+        <p>Yth. {peserta},</p>
+        <p>Terlampir kami kirimkan surat undangan kegiatan <b>{kegiatan}</b>.</p>
+        {f'<p>Silakan konfirmasi kehadiran Anda melalui link berikut: <a href="{confirm_link}">{confirm_link}</a></p>' if confirm_link else ''}
+        <p>Terima kasih.</p>
+        <p><b>Admin SIRANA KEMBANG</b></p>
+        """
+
+        # Siapkan data untuk Brevo API
+        payload = {
+            "sender": {
+                "name": "SIRANA KEMBANG",
+                "email": config.MAIL_DEFAULT_SENDER
+            },
+            "to": [{"email": to_email, "name": peserta}],
+            "subject": f"Undangan: {kegiatan}",
+            "htmlContent": html_content
+        }
+
+        # Jika ada PDF, lampirkan sebagai attachment (base64)
         if pdf_path:
             with open(pdf_path, "rb") as f:
-                msg.attach(
-                    filename=os.path.basename(pdf_path),
-                    content_type="application/pdf",
-                    data=f.read()
-                )
+                import base64 as b64
+                pdf_data = b64.b64encode(f.read()).decode("utf-8")
+                payload["attachment"] = [{
+                    "name": os.path.basename(pdf_path),
+                    "content": pdf_data
+                }]
 
-        mail.send(msg)
-        print("Email berhasil dikirim ke", to_email)
+        # Kirim via Brevo HTTP API (port 443, tidak diblokir DigitalOcean)
+        response = requests.post(
+            "https://api.brevo.com/v3/smtp/email",
+            headers={
+                "api-key": config.BREVO_API_KEY,
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            },
+            json=payload
+        )
+
+        if response.status_code == 201:
+            print("Email berhasil dikirim ke", to_email)
+        else:
+            print("Gagal kirim email ke", to_email, "- Status:", response.status_code, response.text)
 
     except Exception as e:
         print("Gagal kirim email:", e)
