@@ -17,29 +17,39 @@ client = InferenceClient(
 # OPENAI FALLBACK
 # =========================
 def summarize_with_openai(text):
-    """Fallback ke OpenAI jika HuggingFace gagal"""
+    """Meringkas teks menggunakan OpenAI GPT-4o-mini"""
     if not OPENAI_API_KEY:
         return None
 
     try:
-        import openai
-        openai.api_key = OPENAI_API_KEY
+        from openai import OpenAI
+        openai_client = OpenAI(api_key=OPENAI_API_KEY)
 
-        response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
+        response = openai_client.chat.completions.create(
+            model="gpt-4o-mini",
             messages=[
-                {"role": "system", "content": "Anda adalah asisten yang ahli dalam membuat ringkasan rapat dalam Bahasa Indonesia."},
-                {"role": "user", "content": f"Ringkas teks rapat berikut menjadi ringkasan yang singkat, jelas, dan formal dalam Bahasa Indonesia:\n\n{text}"}
+                {
+                    "role": "system", 
+                    "content": (
+                        "Anda adalah asisten notulen rapat profesional. "
+                        "Buat ringkasan rapat (Notulensi) dalam Bahasa Indonesia yang formal, terstruktur, "
+                        "dan mudah dipahami. Gunakan format Markdown berikut:\n\n"
+                        "### 📌 Ringkasan Umum\n(Ringkasan singkat mengenai jalannya rapat)\n\n"
+                        "### 🗝️ Poin-Poin Penting & Pembahasan\n(Poin utama pembahasan rapat)\n\n"
+                        "### 📝 Keputusan Rapat\n(Daftar keputusan resmi yang disepakati)\n\n"
+                        "### 🚀 Daftar Tugas / Tindakan Lanjut (Action Items)\n(Siapa melakukan apa beserta tenggat waktu jika ada)"
+                    )
+                },
+                {"role": "user", "content": f"Berikut adalah transkrip teks rapat:\n\n{text}"}
             ],
-            max_tokens=300,
             temperature=0.3
         )
 
         summary = response.choices[0].message.content.strip()
-        return normalize_text(summary)
+        return summary
 
     except Exception as e:
-        print(f"OpenAI fallback failed: {e}")
+        print(f"OpenAI summarization failed: {e}")
         return None
 def normalize_text(text):
     if not text:
@@ -213,6 +223,14 @@ def summarize_text(text):
 
     if not text:
         return "Tidak ada teks untuk diringkas."
+
+    # Jika OPENAI_API_KEY tersedia, prioritaskan langsung menggunakan OpenAI untuk kualitas maksimal
+    if OPENAI_API_KEY:
+        print("Menggunakan OpenAI untuk membuat ringkasan rapat...")
+        summary = summarize_with_openai(text)
+        if summary:
+            return summary
+        print("OpenAI gagal, beralih ke model lokal/Hugging Face...")
 
     # split kalau panjang
     chunks = chunk_text(text)

@@ -11,3 +11,4 @@ torch
 torchaudio
 huggingface-hub
 rouge-score
+openai
