@@ -118,7 +118,7 @@ def merge_segments(segments, gap_threshold=1.5):
 
     return merged
 
-def diarize_audio(file_path):
+def diarize_audio(file_path, num_speakers=None, min_speakers=None, max_speakers=None):
     try:
         model = load_diarization_pipeline()
         wav_path = convert_audio_for_diarization(file_path)
@@ -126,9 +126,18 @@ def diarize_audio(file_path):
 
         print("Memulai proses diarization...")
 
+        # Setup parameter untuk model PyAnnote
+        diarize_params = {}
+        if num_speakers is not None and num_speakers > 0:
+            diarize_params["num_speakers"] = num_speakers
+        else:
+            diarize_params["min_speakers"] = min_speakers or 2
+            if max_speakers is not None:
+                diarize_params["max_speakers"] = max_speakers
+
         with torch.inference_mode():
-            print("Memulai proses diarization...")
-            diarization_output = model(audio_data)
+            print(f"Memulai proses diarization dengan parameter: {diarize_params}...")
+            diarization_output = model(audio_data, **diarize_params)
             print("Diarization selesai diproses")
 
         if hasattr(diarization_output, "itertracks"):
