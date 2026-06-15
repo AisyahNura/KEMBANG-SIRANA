@@ -108,19 +108,26 @@ def summarize_once(text):
     try:
         print("Memulai proses ringkasan...")
 
-        # Untuk model summarization Hugging Face, kirimkan teks asli tanpa instruksi tambahan.
-        result = client.summarization(
-            text,
-            model="facebook/bart-large-cnn"
-        )
+        # Untuk model T5 Indonesia, kita tambahkan prefix "summarize: " agar model mengenali tugasnya
+        t5_input = f"summarize: {text}"
 
-        # Jika gagal dengan model pertama, coba model lain
+        result = None
+        try:
+            print("Mencoba model Hugging Face: cahya/t5-base-indonesian-summarization-cased")
+            result = client.summarization(
+                t5_input,
+                model="cahya/t5-base-indonesian-summarization-cased"
+            )
+        except Exception as e:
+            print(f"Model cahya gagal: {e}")
+
+        # Jika gagal dengan model pertama, coba model alternatif Indonesia lainnya
         if not result or (hasattr(result, 'summary_text') and not result.summary_text):
-            print("Model pertama gagal, mencoba model alternatif...")
+            print("Model pertama gagal, mencoba model alternatif: panggi/t5-base-indonesian-summarization-cased...")
             try:
                 result = client.summarization(
-                    text,
-                    model="sshleifer/distilbart-cnn-12-6"  # Model alternatif yang lebih ringan
+                    t5_input,
+                    model="panggi/t5-base-indonesian-summarization-cased"
                 )
             except Exception as e:
                 print(f"Model alternatif gagal: {e}")
