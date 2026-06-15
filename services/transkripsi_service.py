@@ -7,6 +7,7 @@ from pydub import AudioSegment
 load_dotenv()
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 model = None
 
 def get_model():
@@ -67,7 +68,50 @@ def compress_audio_if_needed(file_path):
 
 def transcribe_audio_complete(file_path):
     """Transkripsi lengkap: text + segments dalam satu panggilan"""
-    # 1. Coba menggunakan OpenAI Whisper API jika API Key tersedia
+    # 1. Coba menggunakan Groq Whisper API jika API Key tersedia
+    if GROQ_API_KEY:
+        print("Menggunakan Groq Whisper API untuk transkripsi cepat...")
+        try:
+            path_to_use, is_temp = compress_audio_if_needed(file_path)
+            
+            from openai import OpenAI
+            groq_client = OpenAI(
+                api_key=GROQ_API_KEY,
+                base_url="https://api.groq.com/openai/v1"
+            )
+            
+            with open(path_to_use, "rb") as audio_file:
+                response = groq_client.audio.transcriptions.create(
+                    model="whisper-large-v3",
+                    file=audio_file,
+                    response_format="verbose_json",
+                    language="id",
+                    temperature=0
+                )
+            
+            # Hapus file sementara jika ada
+            if is_temp and os.path.exists(path_to_use):
+                try:
+                    os.remove(path_to_use)
+                    print("File kompresi sementara berhasil dihapus.")
+                except Exception as ex:
+                    print(f"Gagal menghapus file kompresi sementara: {ex}")
+            
+            # Serialisasi response ke dict agar kompatibel dengan pemrosesan lama
+            if hasattr(response, "model_dump"):
+                res_dict = response.model_dump()
+            else:
+                res_dict = dict(response)
+                
+            return {
+                "text": res_dict.get("text", "").strip(),
+                "segments": res_dict.get("segments", [])
+            }
+            
+        except Exception as e:
+            print("Gagal menggunakan Groq Whisper API, beralih ke alternatif...", e)
+
+    # 2. Coba menggunakan OpenAI Whisper API jika API Key tersedia
     if OPENAI_API_KEY:
         print("Menggunakan OpenAI Whisper API untuk transkripsi cepat...")
         try:
