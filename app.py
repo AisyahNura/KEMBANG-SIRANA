@@ -41,7 +41,8 @@ class LazyMySQLConnection:
                 host=config.DB_HOST,
                 user=config.DB_USER,
                 password=config.DB_PASSWORD,
-                database=config.DB_NAME
+                database=config.DB_NAME,
+                autocommit=True
             )
         else:
             self._conn.ping(reconnect=True)
