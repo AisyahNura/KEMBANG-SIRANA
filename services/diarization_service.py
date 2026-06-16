@@ -131,7 +131,8 @@ def diarize_audio(file_path, num_speakers=None, min_speakers=None, max_speakers=
         if num_speakers is not None and num_speakers > 0:
             diarize_params["num_speakers"] = num_speakers
         else:
-            diarize_params["min_speakers"] = min_speakers or 2
+            if min_speakers is not None:
+                diarize_params["min_speakers"] = min_speakers
             if max_speakers is not None:
                 diarize_params["max_speakers"] = max_speakers
 

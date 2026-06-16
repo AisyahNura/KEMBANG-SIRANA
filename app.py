@@ -786,9 +786,9 @@ def notulensi():
                     transkrip_bersih = transkrip_asli
 
                 try:
-                    # Estimasi jumlah pembicara dari kolom peserta
+                    # Estimasi jumlah pembicara dari kolom peserta (hanya dipaksa jika lebih dari 1 peserta)
                     peserta_list = [p.strip() for p in peserta.split(",") if p.strip()]
-                    num_speakers = len(peserta_list) if peserta_list else None
+                    num_speakers = len(peserta_list) if len(peserta_list) > 1 else None
                     
                     diarization_result = diarize_audio(filepath, num_speakers=num_speakers)
 
