@@ -1759,10 +1759,10 @@ def preview_notulensi(id):
 
     cursor = get_cursor()
     
-    # Ambil data notulensi dan kegiatannya
+    # Ambil data notulensi dan kegiatannya beserta timestamps
     cursor.execute("""
-        SELECT n.id AS notulensi_id, n.file_path, n.ringkasan, 
-               k.id AS kegiatan_id, k.nama_kegiatan AS kegiatan, k.tempat, k.waktu, k.created_by
+        SELECT n.id AS notulensi_id, n.file_path, n.ringkasan, n.created_at,
+               k.id AS kegiatan_id, k.nama_kegiatan AS kegiatan, k.tempat, k.waktu AS waktu_kegiatan, k.created_by
         FROM notulensi n
         JOIN kegiatan k ON n.kegiatan_id = k.id
         WHERE n.id = %s AND k.created_by = %s
@@ -1772,6 +1772,22 @@ def preview_notulensi(id):
     if not notulensi:
         flash("Notulensi tidak ditemukan.", "danger")
         return redirect(url_for("riwayat_notulensi"))
+
+    # Format waktu kegiatan (rapat) ke Bahasa Indonesia
+    waktu_kegiatan_formatted = "-"
+    if notulensi.get("waktu_kegiatan"):
+        try:
+            waktu_kegiatan_formatted = format_tanggal_indo(notulensi["waktu_kegiatan"]) + " - " + notulensi["waktu_kegiatan"].strftime("%H:%M") + " WIB"
+        except Exception:
+            waktu_kegiatan_formatted = str(notulensi["waktu_kegiatan"])
+
+    # Format waktu pembuatan notulensi ke Bahasa Indonesia
+    waktu_pembuatan_formatted = "-"
+    if notulensi.get("created_at"):
+        try:
+            waktu_pembuatan_formatted = format_tanggal_indo(notulensi["created_at"]) + " - " + notulensi["created_at"].strftime("%H:%M") + " WIB"
+        except Exception:
+            waktu_pembuatan_formatted = str(notulensi["created_at"])
 
     # Ambil data nama peserta rapat
     cursor.execute("SELECT nama FROM peserta WHERE kegiatan_id = %s", (notulensi["kegiatan_id"],))
@@ -1798,7 +1814,9 @@ def preview_notulensi(id):
         notulensi=notulensi,
         peserta=peserta_str,
         content=content,
-        filename=filename
+        filename=filename,
+        waktu_kegiatan=waktu_kegiatan_formatted,
+        waktu_pembuatan=waktu_pembuatan_formatted
     )
 
 

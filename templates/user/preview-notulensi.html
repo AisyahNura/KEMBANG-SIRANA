@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -13,6 +14,7 @@
       padding: 0 20px;
       font-family: 'Inter', system-ui, -apple-system, sans-serif;
     }
+
     .detail-card {
       background: #ffffff;
       border-radius: 12px;
@@ -21,6 +23,7 @@
       margin-bottom: 30px;
       border-left: 5px solid #2e7d32;
     }
+
     .detail-card h3 {
       margin-top: 0;
       color: #1b5e20;
@@ -29,11 +32,13 @@
       padding-bottom: 10px;
       margin-bottom: 20px;
     }
+
     .detail-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
       gap: 20px;
     }
+
     .detail-item strong {
       display: block;
       color: #666;
@@ -41,11 +46,13 @@
       text-transform: uppercase;
       margin-bottom: 5px;
     }
+
     .detail-item span {
       color: #333;
       font-size: 16px;
       font-weight: 500;
     }
+
     .content-card {
       background: #ffffff;
       border-radius: 12px;
@@ -53,6 +60,7 @@
       padding: 30px;
       margin-bottom: 40px;
     }
+
     .content-header {
       display: flex;
       justify-content: space-between;
@@ -61,15 +69,18 @@
       padding-bottom: 15px;
       margin-bottom: 20px;
     }
+
     .content-header h3 {
       margin: 0;
       color: #2e7d32;
       font-size: 20px;
     }
+
     .btn-group {
       display: flex;
       gap: 10px;
     }
+
     .btn-action {
       padding: 8px 16px;
       border-radius: 6px;
@@ -83,21 +94,26 @@
       text-decoration: none;
       transition: all 0.2s ease;
     }
+
     .btn-download {
       background: #2e7d32;
       color: #ffffff;
     }
+
     .btn-download:hover {
       background: #1b5e20;
     }
+
     .btn-copy {
       background: #e8f5e9;
       color: #2e7d32;
       border: 1px solid #c8e6c9;
     }
+
     .btn-copy:hover {
       background: #c8e6c9;
     }
+
     .notulensi-text-box {
       background: #f9fbf9;
       border: 1px solid #e8ede8;
@@ -111,6 +127,7 @@
       max-height: 600px;
       overflow-y: auto;
     }
+
     .toast-success {
       position: fixed;
       bottom: 20px;
@@ -119,19 +136,21 @@
       color: white;
       padding: 12px 24px;
       border-radius: 6px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
       font-weight: 500;
       opacity: 0;
       transform: translateY(20px);
       transition: all 0.3s ease;
       z-index: 1000;
     }
+
     .toast-success.show {
       opacity: 1;
       transform: translateY(0);
     }
   </style>
 </head>
+
 <body class="dashboard-page">
 
   <nav class="navbar">
@@ -143,10 +162,14 @@
       </div>
     </div>
 
-    <div class="nav-right">
+    <div class="nav-right" style="display: flex; gap: 15px;">
+      <a href="{{ url_for('riwayat_notulensi') }}" class="nav-item">
+        <span class="icon">⬅️</span>
+        <span class="nav-text">Riwayat</span>
+      </a>
       <a href="{{ url_for('user_dashboard') }}" class="nav-item">
         <span class="icon">🏠</span>
-        <span class="nav-text">Kembali ke Dashboard</span>
+        <span class="nav-text">Dashboard</span>
       </a>
     </div>
   </nav>
@@ -160,7 +183,7 @@
   </section>
 
   <main class="preview-container">
-    
+
     <!-- Bagian 1: Detail Rapat -->
     <div class="detail-card">
       <h3>Detail Kegiatan</h3>
@@ -174,11 +197,15 @@
           <span>{{ notulensi.tempat }}</span>
         </div>
         <div class="detail-item">
-          <strong>Waktu Pelaksanaan</strong>
-          <span>{{ notulensi.waktu }}</span>
+          <strong>Waktu Rapat</strong>
+          <span>{{ waktu_kegiatan }}</span>
         </div>
         <div class="detail-item">
-          <strong>Peserta Hadir</strong>
+          <strong>Waktu Pembuatan</strong>
+          <span>{{ waktu_pembuatan }}</span>
+        </div>
+        <div class="detail-item" style="grid-column: span 2;">
+          <strong>Peserta Rapat</strong>
           <span>{{ peserta }}</span>
         </div>
       </div>
@@ -193,13 +220,13 @@
             📋 Salin Teks
           </button>
           {% if filename %}
-            <a href="{{ url_for('download_notulensi', filename=filename) }}" class="btn-action btn-download">
-              📥 Unduh Berkas (.txt)
-            </a>
+          <a href="{{ url_for('download_notulensi', filename=filename) }}" class="btn-action btn-download">
+            📥 Unduh Berkas (.txt)
+          </a>
           {% endif %}
         </div>
       </div>
-      
+
       <!-- Box text preview -->
       <div class="notulensi-text-box" id="notulensi-content">{{ content }}</div>
     </div>
@@ -223,4 +250,5 @@
     }
   </script>
 </body>
+
 </html>
