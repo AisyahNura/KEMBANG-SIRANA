@@ -129,7 +129,11 @@
               <p>{{ n.waktu }} • {{ n.tempat }}</p>
             </div>
           </div>
-          <span class="doc-icon modern-doc-icon">📄</span>
+          {% if n.filename %}
+            <a href="{{ url_for('download_notulensi', filename=n.filename) }}" class="doc-icon modern-doc-icon" title="Unduh Notulensi">📄</a>
+          {% else %}
+            <span class="doc-icon modern-doc-icon" style="opacity: 0.5;">📄</span>
+          {% endif %}
         </div>
         {% endfor %}
       </div>

@@ -374,6 +374,11 @@ def user_dashboard():
     """, (session["user_id"],))
     notulensi_terakhir = cursor.fetchall()
 
+    for item in notulensi_terakhir:
+        raw_path = item.get("file_path") or ""
+        normalized_path = raw_path.replace("\\", "/")
+        item["filename"] = os.path.basename(normalized_path) if normalized_path else ""
+
     return render_template(
         "user/dashboard.html",
         undangan_terakhir=undangan_terakhir,
