@@ -7,11 +7,55 @@ load_dotenv()
 
 HF_TOKEN = os.getenv("HF_TOKEN")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
 client = InferenceClient(
     provider="hf-inference",
     api_key=HF_TOKEN
 )
+
+# =========================
+# GROQ SUMMARIZATION
+# =========================
+def summarize_with_groq(text):
+    """Meringkas teks menggunakan Groq Llama-3.1-8b-instant"""
+    if not GROQ_API_KEY:
+        return None
+
+    try:
+        from openai import OpenAI
+        groq_client = OpenAI(
+            api_key=GROQ_API_KEY,
+            base_url="https://api.groq.com/openai/v1"
+        )
+
+        print("Menghubungi Groq API untuk membuat ringkasan rapat terstruktur...")
+        response = groq_client.chat.completions.create(
+            model="llama-3.1-8b-instant",
+            messages=[
+                {
+                    "role": "system", 
+                    "content": (
+                        "Anda adalah asisten notulen rapat profesional. "
+                        "Buat ringkasan rapat (Notulensi) dalam Bahasa Indonesia yang formal, padat, "
+                        "dan mudah dipahami. Tuliskan ringkasan dalam format terstruktur berikut secara singkat:\n\n"
+                        "**Poin Penting:**\n(Tuliskan 1-2 poin pembahasan utama rapat secara singkat)\n\n"
+                        "**Kesimpulan:**\n(Tuliskan kesimpulan rapat secara singkat)\n\n"
+                        "PENTING: Jangan gunakan simbol heading Markdown (seperti ### atau #), jangan gunakan bullet points (seperti - atau *), dan jangan gunakan emoji apa pun di dalam teks Anda. "
+                        "Jika ada kesalahan ketik atau salah dengar kecil pada transkrip, perbaiki secara wajar berdasarkan konteks."
+                    )
+                },
+                {"role": "user", "content": f"Berikut adalah transkrip teks rapat:\n\n{text}"}
+            ],
+            temperature=0.3
+        )
+
+        summary = response.choices[0].message.content.strip()
+        return summary
+
+    except Exception as e:
+        print(f"Groq summarization failed: {e}")
+        return None
 
 # =========================
 # OPENAI FALLBACK
@@ -32,12 +76,12 @@ def summarize_with_openai(text):
                     "role": "system", 
                     "content": (
                         "Anda adalah asisten notulen rapat profesional. "
-                        "Buat ringkasan rapat (Notulensi) dalam Bahasa Indonesia yang formal, terstruktur, "
-                        "dan mudah dipahami. Gunakan format Markdown berikut:\n\n"
-                        "### 📌 Ringkasan Umum\n(Ringkasan singkat mengenai jalannya rapat)\n\n"
-                        "### 🗝️ Poin-Poin Penting & Pembahasan\n(Poin utama pembahasan rapat)\n\n"
-                        "### 📝 Keputusan Rapat\n(Daftar keputusan resmi yang disepakati)\n\n"
-                        "### 🚀 Daftar Tugas / Tindakan Lanjut (Action Items)\n(Siapa melakukan apa beserta tenggat waktu jika ada)"
+                        "Buat ringkasan rapat (Notulensi) dalam Bahasa Indonesia yang formal, padat, "
+                        "dan mudah dipahami. Tuliskan ringkasan dalam format terstruktur berikut secara singkat:\n\n"
+                        "**Poin Penting:**\n(Tuliskan 1-2 poin pembahasan utama rapat secara singkat)\n\n"
+                        "**Kesimpulan:**\n(Tuliskan kesimpulan rapat secara singkat)\n\n"
+                        "PENTING: Jangan gunakan simbol heading Markdown (seperti ### atau #), jangan gunakan bullet points (seperti - atau *), dan jangan gunakan emoji apa pun di dalam teks Anda. "
+                        "Jika ada kesalahan ketik atau salah dengar kecil pada transkrip, perbaiki secara wajar berdasarkan konteks."
                     )
                 },
                 {"role": "user", "content": f"Berikut adalah transkrip teks rapat:\n\n{text}"}
@@ -51,6 +95,7 @@ def summarize_with_openai(text):
     except Exception as e:
         print(f"OpenAI summarization failed: {e}")
         return None
+
 def normalize_text(text):
     if not text:
         return ""
@@ -224,7 +269,15 @@ def summarize_text(text):
     if not text:
         return "Tidak ada teks untuk diringkas."
 
-    # Jika OPENAI_API_KEY tersedia, prioritaskan langsung menggunakan OpenAI untuk kualitas maksimal
+    # PRIORITAS 1: Jika GROQ_API_KEY tersedia, gunakan Groq Llama3 untuk kualitas maksimal & cepat
+    if GROQ_API_KEY:
+        print("Mencoba membuat ringkasan rapat menggunakan Groq API...")
+        summary = summarize_with_groq(text)
+        if summary:
+            return summary
+        print("Groq API gagal, mencoba OpenAI/Hugging Face...")
+
+    # PRIORITAS 2: Jika OPENAI_API_KEY tersedia, gunakan OpenAI
     if OPENAI_API_KEY:
         print("Menggunakan OpenAI untuk membuat ringkasan rapat...")
         summary = summarize_with_openai(text)
@@ -232,6 +285,7 @@ def summarize_text(text):
             return summary
         print("OpenAI gagal, beralih ke model lokal/Hugging Face...")
 
+    # PRIORITAS 3: Fallback ke model lokal/Hugging Face (T5)
     # split kalau panjang
     chunks = chunk_text(text)
 

@@ -156,7 +156,7 @@ def get_logo_base64():
 # UPLOAD
 # =========================
 UPLOAD_FOLDER = "uploads/audio"
-ALLOWED_EXTENSIONS = {"mp3", "wav", "m4a", "mp4"}
+ALLOWED_EXTENSIONS = {"mp3", "wav", "m4a", "mp4", "aac"}
 
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
@@ -670,7 +670,7 @@ def notulensi():
         if not allowed_file(file.filename):
             return render_template(
                 "user/notulensi.html",
-                message="Format file harus mp3, wav, mp4 atau m4a",
+                message="Format file harus mp3, wav, mp4, m4a atau aac",
                 hasil_notulensi=None,
                 transkrip_asli=None,
                 transkrip_bersih=None,
@@ -682,6 +682,39 @@ def notulensi():
         filename = secure_filename(file.filename)
         filepath = os.path.join(app.config["UPLOAD_FOLDER"], filename)
         file.save(filepath)
+
+        # =====================================================================
+        # VALIDASI DURASI AUDIO (Maksimal 60 Menit)
+        # =====================================================================
+        try:
+            from pydub import AudioSegment
+            sound = AudioSegment.from_file(filepath)
+            durasi_detik = len(sound) / 1000.0
+            durasi_menit = durasi_detik / 60.0
+            
+            if durasi_menit < 1.0 or durasi_menit > 60.0:
+                if os.path.exists(filepath):
+                    try:
+                        os.remove(filepath)
+                    except Exception:
+                        pass
+                
+                # Tentukan pesan error berdasarkan jenis pelanggaran durasi
+                pesan_error = "Unggahan ditolak! Durasi audio terlalu pendek." if durasi_menit < 1.0 else "Unggahan ditolak! Durasi audio melebihi batas maksimal 60 menit."
+                
+                return render_template(
+                    "user/notulensi.html",
+                    message=pesan_error,
+                    hasil_notulensi=None,
+                    transkrip_asli=None,
+                    transkrip_bersih=None,
+                    hasil_ringkasan=None,
+                    diarization_text=None,
+                    file_path=None
+                )
+        except Exception as e:
+            # Fallback jika pydub gagal membaca agar proses tetap berjalan
+            print(f"[Warning] Gagal memvalidasi durasi audio: {e}")
 
         cursor = conn.cursor()
 

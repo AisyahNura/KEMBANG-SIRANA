@@ -20,19 +20,14 @@ def hitung_rouge(reference, prediction):
 def main():
     data = [
         {
-            "judul": "Data Uji 1",
-            "reference": "Rapat membahas persiapan kegiatan yang meliputi administrasi, penyusunan jadwal, dan pembagian tugas. Pimpinan juga menekankan pentingnya kerja sama antar bagian.",
-            "prediction": "Kegiatan utama akan difokuskan pada persiapan administrasi, penyusunan jadwal, dan pembagian tugas kepada seluruh anggota. Pimpinan rapat juga menegaskan pentingnya kerja sama antar bagian."
+            "judul": "Data Uji 1 (Rapat Koordinasi 1)",
+            "reference": "Rapat membahas pentingnya peningkatan koordinasi dan komunikasi dalam pelaksanaan pekerjaan. Seluruh anggota tim diharapkan meningkatkan kualitas komunikasi, menyampaikan informasi secara tepat waktu, serta memperkuat kerja sama antarbagian. Pemanfaatan teknologi juga dianjurkan untuk mendukung penyampaian informasi, pemantauan pekerjaan, dan dokumentasi kegiatan agar tujuan organisasi dapat tercapai secara optimal.",
+            "prediction": "Poin Penting:\n1. Diperlukan komitmen dari seluruh anggota tim untuk meningkatkan kualitas komunikasi dalam lingkungan kerja.\n2. Setiap informasi yang berkaitan dengan kegiatan atau pekerjaan sebaiknya disampaikan secara jelas, tepat, dan tepat waktu kepada pihak yang berkepentingan.\n\nKesimpulan:\nRapat koordinasi telah berhasil membahas pentingnya peningkatan koordinasi dan komunikasi dalam pelaksanaan pekerjaan. Dengan meningkatkan kualitas komunikasi dan kerja sama, diharapkan dapat meningkatkan keberhasilan pekerjaan dan mencapai target yang telah ditetapkan secara maksimal."
         },
         {
-            "judul": "Data Uji 2",
-            "reference": "Rapat membahas jenis data seperti data longitudinal, data panel, dan data space time yang bergantung pada objek penelitian serta memerlukan penanganan khusus.",
-            "prediction": "Ini biasanya kita sebut sebagai data longitudinal, data panel atau data space time. Itu sangat tergantung dari objeknya. Ini tentunya butuh juga penanganan-penanganan sendiri."
-        },
-        {
-            "judul": "Data Uji 3",
-            "reference": "Pembahasan berfokus pada peningkatan kualitas pembelajaran di sekolah melalui penggunaan metode interaktif dan teknologi digital. Guru diharapkan lebih aktif dalam mengembangkan metode pembelajaran agar siswa lebih memahami materi.",
-            "prediction": "Pada pertemuan hari ini dibahas pentingnya peningkatan kualitas pembelajaran di sekolah. Guru diharapkan dapat menggunakan metode pembelajaran yang lebih interaktif agar siswa lebih aktif dalam proses belajar."
+            "judul": "Data Uji 2 (Rapat Pelayanan Kemenag)",
+            "reference": "Rapat membahas peningkatan kualitas pelayanan di lingkungan Kementerian Agama. Seluruh pegawai diharapkan meningkatkan disiplin, profesionalisme, serta koordinasi dalam bekerja. Selain itu, pemanfaatan teknologi informasi perlu dioptimalkan untuk mendukung pelayanan yang lebih cepat, akurat, dan transparan sehingga kualitas pelayanan kepada masyarakat dapat terus meningkat.",
+            "prediction": "Poin Penting:\n1. Meningkatkan kualitas pelayanan di Kementerian Agama melalui kerja sama dan keordinasi yang baik antar pegawai dan bagian.\n2. Menggunakan teknologi informasi untuk mendukung pengelolaan data, penyampaian informasi, dan administrasi layanan.\n\nKesimpulan:\nRapat ini berharap dapat meningkatkan kualitas pelayanan di lingkungan Kementerian Agama melalui kerja sama, keordinasi, dan penggunaan teknologi informasi yang efektif. Dengan demikian, diharapkan dapat memberikan pelayanan yang lebih optimal kepada masyarakat dan mencapai tujuan organisasi dengan lebih baik."
         }
     ]
 
@@ -60,8 +55,8 @@ def main():
     print("ROUGE-2:", round(df["rouge2"].mean(), 4))
     print("ROUGE-L:", round(df["rougeL"].mean(), 4))
 
-    df.to_excel("hasil_rouge_3_data.xlsx", index=False)
-    print("\nFile berhasil disimpan: hasil_rouge_3_data.xlsx")
+    df.to_excel("hasil_rouge_2_data.xlsx", index=False)
+    print("\nFile berhasil disimpan: hasil_rouge_2_data.xlsx")
 
 
 if __name__ == "__main__":

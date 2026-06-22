@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Notulensi | SIRANA KEMBANG</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
+
 <body>
 
   <nav class="navbar">
@@ -127,7 +129,7 @@
 
       {% if hasil_ringkasan %}
       <div class="template-box template-ringkasan">
-        <h4>Ringkasan Rapat</h4>
+        <h4>Ringkasan Umum</h4>
         <pre>{{ hasil_ringkasan }}</pre>
       </div>
       {% endif %}
@@ -139,8 +141,8 @@
 
         {% if file_path %}
         <a href="{{ url_for('download_notulensi', filename=file_path.split('\\')[-1].split('/')[-1]) }}"
-           class="btn-green download-btn">
-           ⬇️ Unduh Notulensi
+          class="btn-green download-btn">
+          ⬇️ Unduh Notulensi
         </a>
         {% endif %}
       </div>
@@ -164,4 +166,5 @@
   </script>
 
 </body>
+
 </html>

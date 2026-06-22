@@ -9,51 +9,66 @@ load_dotenv()
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 model = None
+current_model_name = None
 
 def get_model():
-    global model
-    if model is None:
-        print("Memuat model Whisper...")
+    global model, current_model_name
+    load_dotenv(override=True)
+    model_name = os.getenv("WHISPER_MODEL", "small")
+    
+    if model is None or current_model_name != model_name:
+        print(f"Memuat model Whisper '{model_name}'...")
         # Deteksi GPU otomatis
         device = "cuda" if torch.cuda.is_available() else "cpu"
         print(f"Menggunakan device: {device}")
-        model = whisper.load_model("small", device=device)
+        model = whisper.load_model(model_name, device=device)
+        current_model_name = model_name
     return model
+
 
 def compress_audio_if_needed(file_path):
     """
-    Memeriksa apakah ukuran file audio/video lebih besar dari 25MB. 
-    Jika iya, kompres menggunakan pydub menjadi mono MP3 32kbps agar dapat diproses oleh OpenAI API.
+    Memeriksa apakah ukuran file audio/video lebih besar dari 25MB atau berformat .aac.
+    Jika iya, lakukan konversi/kompresi menggunakan pydub menjadi MP3 agar dapat diproses oleh API.
     """
-    max_bytes = 25 * 1024 * 1024  # 25 MB
-    
     if not os.path.exists(file_path):
         return file_path, False
-        
+
     file_size = os.path.getsize(file_path)
-    if file_size <= max_bytes:
-        print(f"Ukuran file: {file_size / 1024 / 1024:.2f} MB (di bawah limit 25MB, tidak perlu kompresi).")
+    max_bytes = 25 * 1024 * 1024  # 25 MB
+    _, ext = os.path.splitext(file_path.lower())
+    
+    needs_conversion = (ext == ".aac")
+    needs_compression = (file_size > max_bytes)
+    
+    if not needs_compression and not needs_conversion:
+        print(f"Ukuran file: {file_size / 1024 / 1024:.2f} MB (format {ext} didukung dan di bawah 25MB, tidak perlu konversi/kompresi).")
         return file_path, False
         
-    print(f"Ukuran file: {file_size / 1024 / 1024:.2f} MB (melebihi limit 25MB OpenAI).")
-    print("Memulai kompresi audio ke MP3 mono 32kbps...")
-    
+    if needs_conversion:
+        print(f"Format file {ext} tidak didukung langsung oleh Groq/OpenAI API. Melakukan konversi ke MP3...")
+    if needs_compression:
+        print(f"Ukuran file: {file_size / 1024 / 1024:.2f} MB melebihi limit 25MB API. Melakukan kompresi...")
+
     try:
         dir_name = os.path.dirname(file_path)
         base_name = os.path.basename(file_path)
         name_part, _ = os.path.splitext(base_name)
-        temp_path = os.path.join(dir_name, f"temp_{name_part}_compressed.mp3")
+        temp_path = os.path.join(dir_name, f"temp_{name_part}_converted.mp3")
         
         # Load berkas audio/video menggunakan pydub
         sound = AudioSegment.from_file(file_path)
         
-        # Ekspor sebagai mono 32kbps MP3
-        sound.export(temp_path, format="mp3", bitrate="32k", parameters=["-ac", "1"])
+        # Tentukan bitrate berdasarkan kebutuhan kompresi
+        bitrate = "32k" if needs_compression else "128k"
+        
+        # Ekspor sebagai MP3
+        sound.export(temp_path, format="mp3", bitrate=bitrate)
         
         new_size = os.path.getsize(temp_path)
-        print(f"Kompresi selesai. Ukuran file baru: {new_size / 1024 / 1024:.2f} MB")
+        print(f"Konversi/kompresi selesai. Ukuran file baru: {new_size / 1024 / 1024:.2f} MB")
         
-        # Jika masih melebihi 25MB (untuk rekaman yang sangat panjang), turunkan ke 16kbps
+        # Jika masih melebihi 25MB, turunkan ke 16kbps
         if new_size > max_bytes:
             print("File hasil kompresi masih di atas 25MB, mencoba kompresi ulang ke 16kbps...")
             sound.export(temp_path, format="mp3", bitrate="16k", parameters=["-ac", "1"])
@@ -62,21 +77,26 @@ def compress_audio_if_needed(file_path):
         return temp_path, True
         
     except Exception as e:
-        print(f"Gagal melakukan kompresi audio: {e}")
+        print(f"Gagal melakukan konversi/kompresi audio: {e}")
         # Kembalikan file asli sebagai cadangan terakhir
         return file_path, False
 
 def transcribe_audio_complete(file_path):
     """Transkripsi lengkap: text + segments dalam satu panggilan"""
+    # Muat ulang .env secara dinamis agar perubahan langsung terdeteksi tanpa restart server
+    load_dotenv(override=True)
+    groq_api_key = os.getenv("GROQ_API_KEY")
+    openai_api_key = os.getenv("OPENAI_API_KEY")
+
     # 1. Coba menggunakan Groq Whisper API jika API Key tersedia
-    if GROQ_API_KEY:
+    if groq_api_key:
         print("Menggunakan Groq Whisper API untuk transkripsi cepat...")
         try:
             path_to_use, is_temp = compress_audio_if_needed(file_path)
             
             from openai import OpenAI
             groq_client = OpenAI(
-                api_key=GROQ_API_KEY,
+                api_key=groq_api_key,
                 base_url="https://api.groq.com/openai/v1"
             )
             
@@ -112,13 +132,13 @@ def transcribe_audio_complete(file_path):
             print("Gagal menggunakan Groq Whisper API, beralih ke alternatif...", e)
 
     # 2. Coba menggunakan OpenAI Whisper API jika API Key tersedia
-    if OPENAI_API_KEY:
+    if openai_api_key:
         print("Menggunakan OpenAI Whisper API untuk transkripsi cepat...")
         try:
             path_to_use, is_temp = compress_audio_if_needed(file_path)
             
             from openai import OpenAI
-            openai_client = OpenAI(api_key=OPENAI_API_KEY)
+            openai_client = OpenAI(api_key=openai_api_key)
             
             with open(path_to_use, "rb") as audio_file:
                 response = openai_client.audio.transcriptions.create(
