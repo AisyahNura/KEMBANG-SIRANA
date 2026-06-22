@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Preview Notulensi | SIRANA KEMBANG</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <style>
+    /* Styling tambahan khusus untuk halaman preview notulensi agar premium */
+    .preview-container {
+      max-width: 900px;
+      margin: 40px auto;
+      padding: 0 20px;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    }
+    .detail-card {
+      background: #ffffff;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+      padding: 30px;
+      margin-bottom: 30px;
+      border-left: 5px solid #2e7d32;
+    }
+    .detail-card h3 {
+      margin-top: 0;
+      color: #1b5e20;
+      font-size: 20px;
+      border-bottom: 2px solid #e8f5e9;
+      padding-bottom: 10px;
+      margin-bottom: 20px;
+    }
+    .detail-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+    }
+    .detail-item strong {
+      display: block;
+      color: #666;
+      font-size: 13px;
+      text-transform: uppercase;
+      margin-bottom: 5px;
+    }
+    .detail-item span {
+      color: #333;
+      font-size: 16px;
+      font-weight: 500;
+    }
+    .content-card {
+      background: #ffffff;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+      padding: 30px;
+      margin-bottom: 40px;
+    }
+    .content-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 2px solid #f1f8e9;
+      padding-bottom: 15px;
+      margin-bottom: 20px;
+    }
+    .content-header h3 {
+      margin: 0;
+      color: #2e7d32;
+      font-size: 20px;
+    }
+    .btn-group {
+      display: flex;
+      gap: 10px;
+    }
+    .btn-action {
+      padding: 8px 16px;
+      border-radius: 6px;
+      border: none;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      text-decoration: none;
+      transition: all 0.2s ease;
+    }
+    .btn-download {
+      background: #2e7d32;
+      color: #ffffff;
+    }
+    .btn-download:hover {
+      background: #1b5e20;
+    }
+    .btn-copy {
+      background: #e8f5e9;
+      color: #2e7d32;
+      border: 1px solid #c8e6c9;
+    }
+    .btn-copy:hover {
+      background: #c8e6c9;
+    }
+    .notulensi-text-box {
+      background: #f9fbf9;
+      border: 1px solid #e8ede8;
+      border-radius: 8px;
+      padding: 25px;
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 15px;
+      line-height: 1.6;
+      color: #2c3e50;
+      white-space: pre-wrap;
+      max-height: 600px;
+      overflow-y: auto;
+    }
+    .toast-success {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: #2e7d32;
+      color: white;
+      padding: 12px 24px;
+      border-radius: 6px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      font-weight: 500;
+      opacity: 0;
+      transform: translateY(20px);
+      transition: all 0.3s ease;
+      z-index: 1000;
+    }
+    .toast-success.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  </style>
+</head>
+<body class="dashboard-page">
+
+  <nav class="navbar">
+    <div class="logo">
+      <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Logo">
+      <div class="logo-text">
+        <h3>SIRANA KEMBANG</h3>
+        <small>Sistem Informasi Rapat dan Agenda</small>
+      </div>
+    </div>
+
+    <div class="nav-right">
+      <a href="{{ url_for('user_dashboard') }}" class="nav-item">
+        <span class="icon">🏠</span>
+        <span class="nav-text">Kembali ke Dashboard</span>
+      </a>
+    </div>
+  </nav>
+
+  <section class="dashboard-header modern-header">
+    <div class="header-copy">
+      <span class="section-badge">Pratinjau Dokumen</span>
+      <h2>Pratinjau Notulensi Rapat</h2>
+      <p>Lihat isi dokumen notulensi yang telah berhasil digenerate oleh sistem.</p>
+    </div>
+  </section>
+
+  <main class="preview-container">
+    
+    <!-- Bagian 1: Detail Rapat -->
+    <div class="detail-card">
+      <h3>Detail Kegiatan</h3>
+      <div class="detail-grid">
+        <div class="detail-item">
+          <strong>Nama Kegiatan</strong>
+          <span>{{ notulensi.kegiatan }}</span>
+        </div>
+        <div class="detail-item">
+          <strong>Tempat</strong>
+          <span>{{ notulensi.tempat }}</span>
+        </div>
+        <div class="detail-item">
+          <strong>Waktu Pelaksanaan</strong>
+          <span>{{ notulensi.waktu }}</span>
+        </div>
+        <div class="detail-item">
+          <strong>Peserta Hadir</strong>
+          <span>{{ peserta }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bagian 2: Konten Notulensi -->
+    <div class="content-card">
+      <div class="content-header">
+        <h3>Isi Dokumen Notulensi</h3>
+        <div class="btn-group">
+          <button class="btn-action btn-copy" onclick="copyText()">
+            📋 Salin Teks
+          </button>
+          {% if filename %}
+            <a href="{{ url_for('download_notulensi', filename=filename) }}" class="btn-action btn-download">
+              📥 Unduh Berkas (.txt)
+            </a>
+          {% endif %}
+        </div>
+      </div>
+      
+      <!-- Box text preview -->
+      <div class="notulensi-text-box" id="notulensi-content">{{ content }}</div>
+    </div>
+
+  </main>
+
+  <div class="toast-success" id="toast">Teks notulensi berhasil disalin!</div>
+
+  <script>
+    function copyText() {
+      const textToCopy = document.getElementById("notulensi-content").innerText;
+      navigator.clipboard.writeText(textToCopy).then(() => {
+        const toast = document.getElementById("toast");
+        toast.classList.add("show");
+        setTimeout(() => {
+          toast.classList.remove("show");
+        }, 2500);
+      }).catch(err => {
+        console.error("Gagal menyalin teks: ", err);
+      });
+    }
+  </script>
+</body>
+</html>

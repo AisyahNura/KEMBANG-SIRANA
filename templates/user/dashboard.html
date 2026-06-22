@@ -130,7 +130,7 @@
             </div>
           </div>
           {% if n.filename %}
-            <a href="{{ url_for('download_notulensi', filename=n.filename) }}" class="doc-icon modern-doc-icon" title="Unduh Notulensi">📄</a>
+            <a href="{{ url_for('preview_notulensi', id=n.id) }}" class="doc-icon modern-doc-icon" title="Pratinjau Notulensi">📄</a>
           {% else %}
             <span class="doc-icon modern-doc-icon" style="opacity: 0.5;">📄</span>
           {% endif %}

@@ -1752,6 +1752,56 @@ def download_notulensi(filename):
     return send_from_directory("outputs/notulensi", filename, as_attachment=True)
 
 
+@app.route("/user/notulensi/preview/<int:id>")
+def preview_notulensi(id):
+    if "user_id" not in session or session.get("role") != "user":
+        return redirect(url_for("login"))
+
+    cursor = get_cursor()
+    
+    # Ambil data notulensi dan kegiatannya
+    cursor.execute("""
+        SELECT n.id AS notulensi_id, n.file_path, n.ringkasan, 
+               k.id AS kegiatan_id, k.nama_kegiatan AS kegiatan, k.tempat, k.waktu, k.created_by
+        FROM notulensi n
+        JOIN kegiatan k ON n.kegiatan_id = k.id
+        WHERE n.id = %s AND k.created_by = %s
+    """, (id, session["user_id"]))
+    notulensi = cursor.fetchone()
+
+    if not notulensi:
+        flash("Notulensi tidak ditemukan.", "danger")
+        return redirect(url_for("riwayat_notulensi"))
+
+    # Ambil data nama peserta rapat
+    cursor.execute("SELECT nama FROM peserta WHERE kegiatan_id = %s", (notulensi["kegiatan_id"],))
+    peserta_rows = cursor.fetchall()
+    peserta_list = [p["nama"] for p in peserta_rows]
+    peserta_str = ", ".join(peserta_list) if peserta_list else "-"
+
+    # Baca isi file .txt notulensi dari server
+    content = ""
+    file_path = notulensi["file_path"]
+    filename = os.path.basename(file_path.replace("\\", "/")) if file_path else ""
+    
+    if file_path and os.path.exists(file_path):
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                content = f.read()
+        except Exception as e:
+            content = f"Gagal membaca isi berkas notulensi: {e}"
+    else:
+        content = "Berkas notulensi (.txt) tidak ditemukan di server."
+
+    return render_template(
+        "user/preview-notulensi.html",
+        notulensi=notulensi,
+        peserta=peserta_str,
+        content=content,
+        filename=filename
+    )
+
+
 @app.route('/kehadiran/<token>', methods=['GET', 'POST'])
 def konfirmasi_kehadiran(token):
     # halaman publik untuk mengonfirmasi kehadiran via token

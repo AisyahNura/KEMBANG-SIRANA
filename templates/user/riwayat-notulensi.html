@@ -53,7 +53,8 @@
             <td>{{ n.ringkasan or '-' }}</td>
             <td>
               {% if n.filename %}
-                <a href="{{ url_for('download_notulensi', filename=n.filename) }}">Unduh</a>
+                <a href="{{ url_for('preview_notulensi', id=n.id) }}" style="margin-right: 15px; font-weight: 600; color: #2e7d32;">Pratinjau</a>
+                <a href="{{ url_for('download_notulensi', filename=n.filename) }}" style="color: #666;">Unduh</a>
               {% else %}
                 -
               {% endif %}
