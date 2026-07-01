@@ -14,7 +14,7 @@
         <div class="sidebar-brand">
           <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Logo Kemenag">
           <h2>SIRANA KEMBANG</h2>
-          <p>Admin Panel</p>
+          <p>Pimpinan Kemenag Jombang</p>
         </div>
 
         <ul class="sidebar-menu">
@@ -148,7 +148,7 @@
         <div class="section-title approved-title">Input Konfirmasi Manual</div>
 
         <p style="font-size:13px; color:#64748b; margin-bottom:16px; line-height:1.6;">
-          Form ini digunakan admin untuk mencatat konfirmasi peserta yang tidak dapat mengakses WhatsApp, email,
+          Form ini digunakan Pimpinan Kemenag Jombang untuk mencatat konfirmasi peserta yang tidak dapat mengakses WhatsApp, email,
           atau link konfirmasi secara mandiri. Contohnya peserta dikonfirmasi melalui telepon, SMS, surat, atau lisan.
         </p>
 
@@ -196,7 +196,7 @@
                 <option value="SMS">SMS</option>
                 <option value="Lisan">Lisan</option>
                 <option value="Surat">Surat</option>
-                <option value="Admin Manual">Admin Manual</option>
+                <option value="Admin Manual">Manual Pimpinan Kemenag Jombang</option>
                 <option value="Lainnya">Lainnya</option>
               </select>
             </div>
@@ -258,6 +258,77 @@
         </table>
       </section>
 
+      <!-- VALIDASI NOTULENSI RAPAT -->
+      <section class="table-section">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
+          <div class="section-title approved-title" style="margin: 0;">Validasi Notulensi Rapat</div>
+          
+          <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+            <div style="position: relative;">
+              <input type="text" id="searchNotulensi" onkeyup="filterNotulensiTable()" placeholder="Cari kegiatan/pembuat..." style="padding: 7px 12px 7px 30px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px; outline: none; background: #fff; width: 220px;">
+              <span style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 13px;">🔍</span>
+            </div>
+            
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <label for="filterStatusNotulensi" style="font-size: 13px; color: #475569; font-weight: 500;">Status:</label>
+              <select id="filterStatusNotulensi" onchange="filterNotulensiTable()" style="padding: 7px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px; background: #fff; color: #334155; outline: none; cursor: pointer;">
+                <option value="all">Semua Status</option>
+                <option value="pending">Pending</option>
+                <option value="validated">Tervalidasi</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <table>
+          <thead>
+            <tr>
+              <th>No</th>
+              <th>Nama Kegiatan</th>
+              <th>Pembuat</th>
+              <th>Status</th>
+              <th>Aksi</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for n in daftar_notulensi_admin %}
+              <tr class="notulensi-row" data-status="{{ n.status }}">
+                <td>{{ loop.index }}</td>
+                <td>{{ n.nama_kegiatan }}</td>
+                <td>{{ n.pembuat or 'Humas Kemenag Jombang' }}</td>
+                <td>
+                  {% if n.status == 'validated' %}
+                    <span class="badge approved">Tervalidasi</span>
+                  {% else %}
+                    <span class="badge pending">Pending</span>
+                  {% endif %}
+                </td>
+                <td>
+                  <div style="display:flex; align-items:center; gap:8px;">
+                    <select onchange="if(this.value){ if(this.value.startsWith('form:')){ if(confirm('Validasi dan sahkan notulensi rapat ini?')) document.getElementById(this.value.substring(5)).submit(); } else { window.location.href=this.value; } } this.value='';" style="padding: 6px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 12px; font-weight: 500; background: #ffffff; color: #334155; cursor: pointer; outline: none;">
+                      <option value="">Pilih Aksi ▾</option>
+                      <option value="{{ url_for('admin_preview_notulensi', id=n.id) }}">Lihat Notulensi</option>
+                      {% if n.status != 'validated' %}
+                        <option value="form:valForm{{ n.id }}">Validasi & Sahkan</option>
+                      {% endif %}
+                    </select>
+                    {% if n.status != 'validated' %}
+                      <form id="valForm{{ n.id }}" action="{{ url_for('validasi_notulensi', id=n.id) }}" method="POST" style="display:none;"></form>
+                    {% else %}
+                      <span style="font-size:12px; color:#16a34a; font-weight:600;">✓ Sah</span>
+                    {% endif %}
+                  </div>
+                </td>
+              </tr>
+            {% else %}
+              <tr>
+                <td colspan="5" style="text-align:center;">Belum ada notulensi rapat.</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </section>
+
       <!-- RIWAYAT AKTIVITAS UMUM DIPINDAH KE BAWAH AGAR FORM MANUAL TERLIHAT -->
       <section class="table-section">
         <div class="section-title pending-title">Riwayat Aktivitas Umum</div>
@@ -302,5 +373,30 @@
   </div>
 
   <script src="{{ url_for('static', filename='js/admin.js') }}"></script>
+  <script>
+    function filterNotulensiTable() {
+      const searchInput = document.getElementById("searchNotulensi");
+      const filterStatus = document.getElementById("filterStatusNotulensi");
+      if (!searchInput || !filterStatus) return;
+
+      const query = searchInput.value.toLowerCase().trim();
+      const selectedStatus = filterStatus.value;
+      const rows = document.querySelectorAll(".notulensi-row");
+
+      rows.forEach(row => {
+        const text = row.innerText.toLowerCase();
+        const status = row.getAttribute("data-status");
+
+        const matchesSearch = text.includes(query);
+        const matchesStatus = (selectedStatus === "all") || (selectedStatus === status);
+
+        if (matchesSearch && matchesStatus) {
+          row.style.display = "";
+        } else {
+          row.style.display = "none";
+        }
+      });
+    }
+  </script>
 </body>
 </html>

@@ -15,7 +15,7 @@
         <div class="sidebar-brand">
           <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Logo Kemenag">
           <h2>SIRANA KEMBANG</h2>
-          <p>Admin Panel</p>
+          <p>Pimpinan Kemenag Jombang</p>
         </div>
 
         <ul class="sidebar-menu">
@@ -106,20 +106,11 @@
                   </a>
 
                   <div class="btn-row">
-                    <form action="{{ url_for('setujui_undangan_email', id=undangan.id) }}" method="POST" class="submit-form">
-                      <button type="submit" class="btn btn-approve">Email</button>
-                    </form>
-                    <form action="{{ url_for('setujui_undangan_whatsapp', id=undangan.id) }}" method="POST" class="submit-form">
-                      <button type="submit" class="btn btn-approve">WhatsApp</button>
-                    </form>
-                  </div>
-
-                  <div class="btn-row">
-                    <form action="{{ url_for('setujui_undangan_semua', id=undangan.id) }}" method="POST" class="submit-form">
-                      <button type="submit" class="btn btn-approve-all">Email & WhatsApp</button>
+                    <form action="{{ url_for('setujui_undangan', id=undangan.id) }}" method="POST" class="submit-form">
+                      <button type="submit" class="btn btn-approve">Setujui</button>
                     </form>
                     <form action="{{ url_for('tolak_undangan', id=undangan.id) }}" method="POST" class="reject-form">
-                      <input type="hidden" name="catatan_admin" value="Ditolak admin">
+                      <input type="hidden" name="catatan_admin" value="Ditolak Pimpinan Kemenag Jombang">
                       <button type="submit" class="btn btn-reject">Tolak</button>
                     </form>
                   </div>
@@ -166,6 +157,21 @@
                   <a class="btn btn-outline" href="{{ url_for('lihat_undangan_admin', id=undangan.id) }}">
                     Lihat Detail
                   </a>
+
+                  <div class="btn-row" style="margin-top: 10px;">
+                    <form action="{{ url_for('setujui_undangan_email', id=undangan.id) }}" method="POST" class="submit-form">
+                      <button type="submit" class="btn btn-approve">Kirim Email</button>
+                    </form>
+                    <form action="{{ url_for('setujui_undangan_whatsapp', id=undangan.id) }}" method="POST" class="submit-form">
+                      <button type="submit" class="btn btn-approve">Kirim WhatsApp</button>
+                    </form>
+                  </div>
+
+                  <div class="btn-row">
+                    <form action="{{ url_for('setujui_undangan_semua', id=undangan.id) }}" method="POST" class="submit-form">
+                      <button type="submit" class="btn btn-approve-all">Kirim Email & WhatsApp</button>
+                    </form>
+                  </div>
                 </div>
 
               </div>

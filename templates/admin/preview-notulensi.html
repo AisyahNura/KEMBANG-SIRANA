@@ -4,10 +4,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Preview Notulensi | SIRANA KEMBANG</title>
+  <title>Preview Notulensi Admin | SIRANA KEMBANG</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
   <style>
-    /* Styling tambahan khusus untuk halaman preview notulensi agar premium */
     .preview-container {
       max-width: 900px;
       margin: 40px auto;
@@ -21,14 +20,14 @@
       box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
       padding: 30px;
       margin-bottom: 30px;
-      border-left: 5px solid #2e7d32;
+      border-left: 5px solid #059669;
     }
 
     .detail-card h3 {
       margin-top: 0;
-      color: #1b5e20;
+      color: #065f46;
       font-size: 20px;
-      border-bottom: 2px solid #e8f5e9;
+      border-bottom: 2px solid #ecfdf5;
       padding-bottom: 10px;
       margin-bottom: 20px;
     }
@@ -41,14 +40,14 @@
 
     .detail-item strong {
       display: block;
-      color: #666;
+      color: #64748b;
       font-size: 13px;
       text-transform: uppercase;
       margin-bottom: 5px;
     }
 
     .detail-item span {
-      color: #333;
+      color: #1e293b;
       font-size: 16px;
       font-weight: 500;
     }
@@ -65,20 +64,24 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      border-bottom: 2px solid #f1f8e9;
+      border-bottom: 2px solid #ecfdf5;
       padding-bottom: 15px;
       margin-bottom: 20px;
+      flex-wrap: wrap;
+      gap: 15px;
     }
 
     .content-header h3 {
       margin: 0;
-      color: #2e7d32;
+      color: #065f46;
       font-size: 20px;
     }
 
     .btn-group {
       display: flex;
       gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
     }
 
     .btn-action {
@@ -90,28 +93,37 @@
       font-size: 14px;
       display: flex;
       align-items: center;
-      gap: 5px;
+      gap: 6px;
       text-decoration: none;
       transition: all 0.2s ease;
     }
 
     .btn-download {
-      background: #2e7d32;
+      background: #059669;
       color: #ffffff;
     }
 
     .btn-download:hover {
-      background: #1b5e20;
+      background: #047857;
+    }
+
+    .btn-validate {
+      background: #2563eb;
+      color: #ffffff;
+    }
+
+    .btn-validate:hover {
+      background: #1d4ed8;
     }
 
     .btn-copy {
-      background: #e8f5e9;
-      color: #2e7d32;
-      border: 1px solid #c8e6c9;
+      background: #f1f5f9;
+      color: #334155;
+      border: 1px solid #cbd5e1;
     }
 
     .btn-copy:hover {
-      background: #c8e6c9;
+      background: #e2e8f0;
     }
 
     .btn-news {
@@ -124,24 +136,42 @@
     }
 
     .notulensi-text-box {
-      background: #f9fbf9;
-      border: 1px solid #e8ede8;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
       border-radius: 8px;
       padding: 25px;
       font-family: 'Courier New', Courier, monospace;
       font-size: 15px;
       line-height: 1.6;
-      color: #2c3e50;
+      color: #1e293b;
       white-space: pre-wrap;
       max-height: 600px;
       overflow-y: auto;
+    }
+
+    .status-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .status-validated {
+      background: #dcfce7;
+      color: #15803d;
+    }
+
+    .status-pending {
+      background: #fef3c7;
+      color: #b45309;
     }
 
     .toast-success {
       position: fixed;
       bottom: 20px;
       right: 20px;
-      background: #2e7d32;
+      background: #059669;
       color: white;
       padding: 12px 24px;
       border-radius: 6px;
@@ -167,27 +197,22 @@
       <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Logo">
       <div class="logo-text">
         <h3>SIRANA KEMBANG</h3>
-        <small>Sistem Informasi Rapat dan Agenda</small>
+        <small>Pimpinan Kemenag Jombang (Admin)</small>
       </div>
     </div>
 
     <div class="nav-right" style="display: flex; gap: 15px;">
-      <a href="{{ url_for('riwayat_notulensi') }}" class="nav-item">
-        <span class="icon">⬅️</span>
-        <span class="nav-text">Riwayat</span>
-      </a>
-      <a href="{{ url_for('user_dashboard') }}" class="nav-item">
-        <span class="icon">🏠</span>
-        <span class="nav-text">Dashboard</span>
+      <a href="{{ url_for('admin_monitoring') }}" class="nav-item">
+        <span class="nav-text">Kembali ke Monitoring</span>
       </a>
     </div>
   </nav>
 
   <section class="dashboard-header modern-header">
     <div class="header-copy">
-      <span class="section-badge">Pratinjau Dokumen</span>
+      <span class="section-badge">Validasi Pimpinan</span>
       <h2>Pratinjau Notulensi Rapat</h2>
-      <p>Lihat isi dokumen notulensi yang telah berhasil digenerate oleh sistem.</p>
+      <p>Pemeriksaan dan validasi hasil notulensi rapat oleh Pimpinan Kemenag Jombang.</p>
     </div>
   </section>
 
@@ -195,11 +220,25 @@
 
     <!-- Bagian 1: Detail Rapat -->
     <div class="detail-card">
-      <h3>Detail Kegiatan</h3>
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #ecfdf5; padding-bottom: 10px; margin-bottom: 20px;">
+        <h3 style="border: none; padding: 0; margin: 0;">Detail Kegiatan</h3>
+        <div>
+          {% if notulensi.status == 'validated' %}
+            <span class="status-badge status-validated">Tervalidasi (Sah)</span>
+          {% else %}
+            <span class="status-badge status-pending">Status: Pending Validasi</span>
+          {% endif %}
+        </div>
+      </div>
+
       <div class="detail-grid">
         <div class="detail-item">
           <strong>Nama Kegiatan</strong>
           <span>{{ notulensi.kegiatan }}</span>
+        </div>
+        <div class="detail-item">
+          <strong>Pembuat Notulensi</strong>
+          <span>{{ notulensi.pembuat_nama or notulensi.pembuat_email or '-' }}</span>
         </div>
         <div class="detail-item">
           <strong>Tempat</strong>
@@ -226,15 +265,23 @@
         <h3>Isi Dokumen Notulensi</h3>
         <div class="btn-group">
           <button class="btn-action btn-copy" onclick="copyText()">
-            📋 Salin Teks
+            Salin Teks
           </button>
-          <a href="{{ url_for('user_preview_berita', id=notulensi.notulensi_id) }}" class="btn-action btn-news">
+          <a href="{{ url_for('admin_preview_berita', id=notulensi.notulensi_id) }}" class="btn-action btn-news">
             📰 Jadikan Berita
           </a>
           {% if filename %}
           <a href="{{ url_for('download_notulensi', filename=filename) }}" class="btn-action btn-download">
-            📥 Unduh Berkas (.txt)
+            Unduh Berkas (.txt)
           </a>
+          {% endif %}
+
+          {% if notulensi.status != 'validated' %}
+          <form action="{{ url_for('validasi_notulensi', id=notulensi.notulensi_id) }}" method="POST" style="margin:0;" onsubmit="return confirm('Validasi dan sahkan notulensi rapat ini?')">
+            <button type="submit" class="btn-action btn-validate">
+              Validasi & Sahkan
+            </button>
+          </form>
           {% endif %}
         </div>
       </div>

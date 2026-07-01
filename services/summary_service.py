@@ -304,3 +304,93 @@ def summarize_text(text):
     final_summary = summarize_once(combined)
 
     return final_summary if final_summary else fallback_summary(combined)
+
+
+# =========================
+# GENERATE NEWS FOR HUMAS KEMENAG
+# =========================
+def generate_berita_kemenag(kegiatan, tempat, peserta, content):
+    """Mengubah transkrip/ringkasan rapat menjadi draf berita formal Humas Kemenag"""
+    # Pastikan data teks tidak kosong
+    if not content or content == "-":
+        return "Tidak ada isi rapat/transkrip yang bisa diolah menjadi berita."
+
+    # Siapkan prompt untuk AI
+    prompt = (
+        "Anda adalah staf Hubungan Masyarakat (Humas) Kementerian Agama Kabupaten Jombang yang profesional dan jurnalis senior.\n"
+        "Tugas Anda adalah membuat artikel berita formal (Siaran Pers / Press Release) berbahasa Indonesia yang siap dipublikasikan berdasarkan notulensi rapat di bawah ini.\n\n"
+        f"INFORMASI KEGIATAN:\n"
+        f"- Nama Kegiatan: {kegiatan}\n"
+        f"- Tempat: {tempat}\n"
+        f"- Peserta: {peserta}\n\n"
+        f"Bahan Ringkasan/Notulensi:\n{content}\n\n"
+        "KETENTUAN PENULISAN BERITA:\n"
+        "1. Tuliskan Judul Berita di baris pertama yang menarik, informatif, dan formal. Jangan gunakan tanda petik ganda untuk membungkus seluruh judul.\n"
+        "2. Berita harus diawali dengan dateline formal Kemenag Jombang, yaitu: 'Jombang (Kemenag) -- ' (menggunakan dua tanda strip/minus).\n"
+        "3. Paragraf pertama (Lead) harus memuat unsur 5W+1H (Apa kegiatannya, siapa penyelenggara/peserta utamanya, kapan, di mana, dan tujuannya).\n"
+        "4. Paragraf berikutnya menjelaskan pembahasan utama, kesepakatan, kutipan pendapat, dan arahan penting dalam rapat secara mengalir dan naratif.\n"
+        "5. Gunakan bahasa jurnalistik yang mengalir, resmi, ejaan baku (PUEBI/EYD), dan tidak menggunakan bullet points.\n"
+        "6. Akhiri berita dengan tanda penutup inisial Humas seperti '(hms)' atau '(dsi)' di akhir kalimat paragraf terakhir.\n"
+        "7. Di baris paling bawah setelah teks berita (tambahkan baris baru kosong pembatas), tuliskan secara presisi teks berikut:\n"
+        "Penulis: \n"
+        "Editor: \n"
+        "(Biarkan setelah kata 'Penulis: ' dan 'Editor: ' kosong tanpa teks apa pun agar bisa diisi secara manual oleh pengguna).\n"
+        "8. HANYA kembalikan teks berita utuh saja. Jangan tambahkan kata-kata pengantar seperti 'Berikut adalah berita...', jangan gunakan simbol markdown heading (#, ##, ###) untuk memisahkan bagian berita."
+    )
+
+    # PRIORITAS 1: Coba Groq Llama 3.1
+    if GROQ_API_KEY:
+        try:
+            from openai import OpenAI
+            groq_client = OpenAI(
+                api_key=GROQ_API_KEY,
+                base_url="https://api.groq.com/openai/v1"
+            )
+
+            print("Menghubungi Groq API untuk generate berita Humas Kemenag...")
+            response = groq_client.chat.completions.create(
+                model="llama-3.1-8b-instant",
+                messages=[
+                    {"role": "system", "content": "Anda adalah asisten penulisan berita Humas Kementerian Agama yang profesional."},
+                    {"role": "user", "content": prompt}
+                ],
+                temperature=0.4
+            )
+
+            berita = response.choices[0].message.content.strip()
+            if berita:
+                return berita
+        except Exception as e:
+            print(f"Groq news generation failed: {e}")
+
+    # PRIORITAS 2: Coba OpenAI GPT-4o-mini
+    if OPENAI_API_KEY:
+        try:
+            from openai import OpenAI
+            openai_client = OpenAI(api_key=OPENAI_API_KEY)
+
+            print("Menghubungi OpenAI API untuk generate berita Humas Kemenag...")
+            response = openai_client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {"role": "system", "content": "Anda adalah asisten penulisan berita Humas Kementerian Agama yang profesional."},
+                    {"role": "user", "content": prompt}
+                ],
+                temperature=0.4
+            )
+
+            berita = response.choices[0].message.content.strip()
+            if berita:
+                return berita
+        except Exception as e:
+            print(f"OpenAI news generation failed: {e}")
+
+    # FALLBACK: Sederhana jika API gagal semua
+    return (
+        f"Kemenag Jombang Gelar Rapat {kegiatan}\n\n"
+        f"Jombang (Kemenag) -- Kantor Kementerian Agama Kabupaten Jombang menggelar kegiatan {kegiatan} bertempat di {tempat}. Rapat ini dihadiri oleh {peserta}.\n\n"
+        f"Dalam rapat tersebut, dibahas mengenai beberapa poin penting, yaitu:\n{content}\n\n"
+        f"Diharapkan seluruh pihak dapat menindaklanjuti hasil kegiatan ini demi kelancaran tugas bersama. (hms)\n\n"
+        f"Penulis: \n"
+        f"Editor: "
+    )

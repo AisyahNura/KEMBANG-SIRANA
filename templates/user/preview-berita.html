@@ -4,10 +4,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Preview Notulensi | SIRANA KEMBANG</title>
+  <title>Draf Berita Humas | SIRANA KEMBANG</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
   <style>
-    /* Styling tambahan khusus untuk halaman preview notulensi agar premium */
     .preview-container {
       max-width: 900px;
       margin: 40px auto;
@@ -79,10 +78,11 @@
     .btn-group {
       display: flex;
       gap: 10px;
+      flex-wrap: wrap;
     }
 
     .btn-action {
-      padding: 8px 16px;
+      padding: 10px 20px;
       border-radius: 6px;
       border: none;
       font-weight: 600;
@@ -96,12 +96,12 @@
     }
 
     .btn-download {
-      background: #2e7d32;
+      background: #0288d1;
       color: #ffffff;
     }
 
     .btn-download:hover {
-      background: #1b5e20;
+      background: #01579b;
     }
 
     .btn-copy {
@@ -114,27 +114,58 @@
       background: #c8e6c9;
     }
 
-    .btn-news {
-      background: #0288d1;
+    .btn-save {
+      background: #2e7d32;
+      color: white;
+    }
+
+    .btn-save:hover {
+      background: #1b5e20;
+    }
+
+    .btn-regenerate {
+      background: #f59e0b;
       color: #ffffff;
     }
 
-    .btn-news:hover {
-      background: #01579b;
+    .btn-regenerate:hover {
+      background: #d97706;
     }
 
-    .notulensi-text-box {
-      background: #f9fbf9;
-      border: 1px solid #e8ede8;
+
+    .editor-container {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    .editor-label {
+      font-weight: 600;
+      color: #2c3e50;
+      font-size: 14px;
+    }
+
+    .notulensi-textarea {
+      width: 100%;
+      height: 450px;
+      padding: 20px;
+      border: 1px solid #cbd5e1;
       border-radius: 8px;
-      padding: 25px;
-      font-family: 'Courier New', Courier, monospace;
+      font-family: inherit;
       font-size: 15px;
       line-height: 1.6;
-      color: #2c3e50;
-      white-space: pre-wrap;
-      max-height: 600px;
-      overflow-y: auto;
+      color: #334155;
+      resize: vertical;
+      background: #f8fafc;
+      transition: border-color 0.2s ease, background-color 0.2s ease;
+      box-sizing: border-box;
+    }
+
+    .notulensi-textarea:focus {
+      outline: none;
+      border-color: #2e7d32;
+      background: #ffffff;
+      box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.1);
     }
 
     .toast-success {
@@ -157,6 +188,16 @@
       opacity: 1;
       transform: translateY(0);
     }
+
+    .alert-flash {
+      background-color: #d1e7dd;
+      color: #0f5132;
+      border: 1px solid #badbcc;
+      padding: 15px;
+      margin-bottom: 20px;
+      border-radius: 8px;
+      font-weight: 500;
+    }
   </style>
 </head>
 
@@ -172,9 +213,9 @@
     </div>
 
     <div class="nav-right" style="display: flex; gap: 15px;">
-      <a href="{{ url_for('riwayat_notulensi') }}" class="nav-item">
+      <a href="{{ url_for('preview_notulensi', id=notulensi.notulensi_id) }}" class="nav-item">
         <span class="icon">⬅️</span>
-        <span class="nav-text">Riwayat</span>
+        <span class="nav-text">Kembali ke Notulensi</span>
       </a>
       <a href="{{ url_for('user_dashboard') }}" class="nav-item">
         <span class="icon">🏠</span>
@@ -185,20 +226,30 @@
 
   <section class="dashboard-header modern-header">
     <div class="header-copy">
-      <span class="section-badge">Pratinjau Dokumen</span>
-      <h2>Pratinjau Notulensi Rapat</h2>
-      <p>Lihat isi dokumen notulensi yang telah berhasil digenerate oleh sistem.</p>
+      <span class="section-badge">Draf Berita Jurnalistik</span>
+      <h2>Rilis Berita Humas Kemenag</h2>
+      <p>Teks berita berikut di-generate secara otomatis berbasis AI dari hasil notulensi rapat. Anda dapat menyunting isi berita sebelum dipublikasikan.</p>
     </div>
   </section>
 
   <main class="preview-container">
 
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert-flash">
+            {{ message }}
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
     <!-- Bagian 1: Detail Rapat -->
     <div class="detail-card">
-      <h3>Detail Kegiatan</h3>
+      <h3>Referensi Kegiatan</h3>
       <div class="detail-grid">
         <div class="detail-item">
-          <strong>Nama Kegiatan</strong>
+          <strong>Nama Rapat / Kegiatan</strong>
           <span>{{ notulensi.kegiatan }}</span>
         </div>
         <div class="detail-item">
@@ -209,10 +260,6 @@
           <strong>Waktu Rapat</strong>
           <span>{{ waktu_kegiatan }}</span>
         </div>
-        <div class="detail-item">
-          <strong>Waktu Pembuatan</strong>
-          <span>{{ waktu_pembuatan }}</span>
-        </div>
         <div class="detail-item" style="grid-column: span 2;">
           <strong>Peserta Rapat</strong>
           <span>{{ peserta }}</span>
@@ -220,36 +267,38 @@
       </div>
     </div>
 
-    <!-- Bagian 2: Konten Notulensi -->
+    <!-- Bagian 2: Editor Teks Berita -->
     <div class="content-card">
-      <div class="content-header">
-        <h3>Isi Dokumen Notulensi</h3>
-        <div class="btn-group">
-          <button class="btn-action btn-copy" onclick="copyText()">
-            📋 Salin Teks
-          </button>
-          <a href="{{ url_for('user_preview_berita', id=notulensi.notulensi_id) }}" class="btn-action btn-news">
-            📰 Jadikan Berita
-          </a>
-          {% if filename %}
-          <a href="{{ url_for('download_notulensi', filename=filename) }}" class="btn-action btn-download">
-            📥 Unduh Berkas (.txt)
-          </a>
-          {% endif %}
+      <form action="{{ url_for('user_preview_berita', id=notulensi.notulensi_id) }}" method="POST">
+        <div class="content-header">
+          <h3>Penyunting Teks Berita</h3>
+          <div class="btn-group">
+            <button type="button" class="btn-action btn-copy" onclick="copyText()">
+              📋 Salin Berita
+            </button>
+            <button type="button" class="btn-action btn-download" onclick="downloadBerita()">
+              📥 Unduh Teks (.txt)
+            </button>
+            <button type="submit" class="btn-action btn-save">
+              💾 Simpan Perubahan
+            </button>
+          </div>
         </div>
-      </div>
 
-      <!-- Box text preview -->
-      <div class="notulensi-text-box" id="notulensi-content">{{ content }}</div>
+        <div class="editor-container">
+          <label class="editor-label" for="teks_berita">Silakan sesuaikan isi berita di bawah ini:</label>
+          <textarea class="notulensi-textarea" name="teks_berita" id="teks_berita" placeholder="Draf berita akan muncul di sini...">{{ teks_berita }}</textarea>
+        </div>
+      </form>
     </div>
 
   </main>
 
-  <div class="toast-success" id="toast">Teks notulensi berhasil disalin!</div>
+  <div class="toast-success" id="toast">Teks berita berhasil disalin ke clipboard!</div>
 
   <script>
     function copyText() {
-      const textToCopy = document.getElementById("notulensi-content").innerText;
+      const textToCopy = document.getElementById("teks_berita").value;
       navigator.clipboard.writeText(textToCopy).then(() => {
         const toast = document.getElementById("toast");
         toast.classList.add("show");
@@ -259,6 +308,17 @@
       }).catch(err => {
         console.error("Gagal menyalin teks: ", err);
       });
+    }
+
+    function downloadBerita() {
+      const text = document.getElementById("teks_berita").value;
+      const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = "berita_humas_{{ notulensi.notulensi_id }}.txt";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     }
   </script>
 </body>

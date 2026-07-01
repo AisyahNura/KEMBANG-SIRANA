@@ -17,7 +17,37 @@
   </div>
 </div>
 
-    <div class="nav-right">
+    <div class="nav-right" style="display:flex; align-items:center;">
+      <div class="notif-dropdown-wrap">
+        <button class="notif-bell-btn" id="notifBellBtn" onclick="toggleNotifDropdown()">
+          🔔
+          {% if unread_count and unread_count > 0 %}
+            <span class="notif-badge-count">{{ unread_count }}</span>
+          {% endif %}
+        </button>
+        <div class="notif-dropdown-box" id="notifDropdownBox">
+          <div class="notif-header">
+            <span>Notifikasi</span>
+            {% if unread_count and unread_count > 0 %}
+              <span style="font-size:11px; background:#ef4444; color:#fff; padding:2px 6px; border-radius:10px;">{{ unread_count }} Baru</span>
+            {% endif %}
+          </div>
+          <div class="notif-list-container">
+            {% if user_notifications %}
+              {% for n in user_notifications %}
+                <a href="{{ url_for('read_notification', id=n.id) }}" class="notif-item-link {% if n.is_read == 0 %}unread{% endif %}">
+                  <div class="notif-item-title">{{ n.title }}</div>
+                  <div class="notif-item-msg">{{ n.message }}</div>
+                  <div class="notif-item-time">{{ n.created_at.strftime('%d-%m-%Y %H:%M') if n.created_at else '' }}</div>
+                </a>
+              {% endfor %}
+            {% else %}
+              <div class="notif-empty">Belum ada notifikasi</div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
       <a href="{{ url_for('user_dashboard') }}" class="nav-item">
         <span class="icon">⬅️</span>
         <span class="nav-text">Kembali ke Dashboard</span>
@@ -49,7 +79,7 @@
             <th>Waktu</th>
             <th>Tempat</th>
             <th>Status</th>
-            <th>Catatan Admin</th>
+            <th>Catatan Pimpinan Kemenag Jombang</th>
             <th>Aksi</th>
           </tr>
         </thead>
@@ -71,6 +101,8 @@
             <td>
               {% if u.status == 'approved' %}
                 <a href="{{ url_for('preview_undangan_user', id=u.id) }}">Lihat</a>
+                |
+                <a href="{{ url_for('notulensi', undangan_id=u.id) }}" style="color: #2563eb; font-weight: 600;">Buat Notulensi</a>
               {% elif u.status == 'pending' %}
                 <a href="{{ url_for('edit_undangan', id=u.id) }}">Edit</a>
               {% else %}
@@ -88,5 +120,18 @@
     </div>
   </section>
 
+  <script>
+    function toggleNotifDropdown() {
+      const box = document.getElementById("notifDropdownBox");
+      box.classList.toggle("show");
+    }
+    document.addEventListener("click", function(e) {
+      const wrap = document.querySelector(".notif-dropdown-wrap");
+      if (wrap && !wrap.contains(e.target)) {
+        const box = document.getElementById("notifDropdownBox");
+        if (box) box.classList.remove("show");
+      }
+    });
+  </script>
 </body>
 </html>

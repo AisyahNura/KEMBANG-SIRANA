@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dashboard | SIRANA KEMBANG</title>
+  <title>Dashboard Humas Kemenag Jombang | SIRANA KEMBANG</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
+
 <body class="dashboard-page">
 
   <nav class="navbar dashboard-navbar">
@@ -17,7 +19,39 @@
       </div>
     </div>
 
-    <div class="nav-right">
+    <div class="nav-right" style="display:flex; align-items:center;">
+      <div class="notif-dropdown-wrap">
+        <button class="notif-bell-btn" id="notifBellBtn" onclick="toggleNotifDropdown()">
+          🔔
+          {% if unread_count and unread_count > 0 %}
+          <span class="notif-badge-count">{{ unread_count }}</span>
+          {% endif %}
+        </button>
+        <div class="notif-dropdown-box" id="notifDropdownBox">
+          <div class="notif-header">
+            <span>Notifikasi</span>
+            {% if unread_count and unread_count > 0 %}
+            <span style="font-size:11px; background:#ef4444; color:#fff; padding:2px 6px; border-radius:10px;">{{
+              unread_count }} Baru</span>
+            {% endif %}
+          </div>
+          <div class="notif-list-container">
+            {% if user_notifications %}
+            {% for n in user_notifications %}
+            <a href="{{ url_for('read_notification', id=n.id) }}"
+              class="notif-item-link {% if n.is_read == 0 %}unread{% endif %}">
+              <div class="notif-item-title">{{ n.title }}</div>
+              <div class="notif-item-msg">{{ n.message }}</div>
+              <div class="notif-item-time">{{ n.created_at.strftime('%d-%m-%Y %H:%M') if n.created_at else '' }}</div>
+            </a>
+            {% endfor %}
+            {% else %}
+            <div class="notif-empty">Belum ada notifikasi</div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
       <a href="{{ url_for('index') }}" class="nav-item">
         <span class="icon">🏠</span>
         <span class="nav-text">Beranda</span>
@@ -27,7 +61,7 @@
 
   <section class="dashboard-header modern-header">
     <div class="header-copy">
-      <span class="section-badge">Dashboard Utama</span>
+      <span class="section-badge">Dashboard Humas Kemenag Jombang</span>
       <h2>Kelola Agenda dan Notulensi dengan Lebih Mudah</h2>
       <p>Selamat datang di Sistem Informasi Rapat dan Agenda Kemenag Jombang.</p>
     </div>
@@ -41,7 +75,7 @@
       </div>
       <h3>Buat Undangan Rapat</h3>
       <p>Membuat undangan rapat resmi dengan template Kemenag yang lebih cepat, rapi, dan siap diproses.</p>
-      <button onclick="window.location.href='{{ url_for('buat_undangan') }}'">
+      <button onclick="window.location.href=`{{ url_for('buat_undangan') }}`">
         + Undangan Baru
       </button>
     </div>
@@ -53,7 +87,7 @@
       </div>
       <h3>Notulensi Otomatis</h3>
       <p>Ubah rekaman rapat menjadi notulensi otomatis agar dokumentasi rapat lebih cepat dan terstruktur.</p>
-      <button onclick="window.location.href='{{ url_for('notulensi') }}'">
+      <button onclick="window.location.href=`{{ url_for('notulensi') }}`">
         + Notulensi Baru
       </button>
     </div>
@@ -69,43 +103,43 @@
     </div>
 
     {% if undangan_terakhir %}
-      <div class="list-group">
-        {% for u in undangan_terakhir %}
-        <div class="list-item modern-item">
-          <div class="list-item-left">
-            <div class="item-icon-circle">📨</div>
-            <div>
-              <strong>{{ u.kegiatan }}</strong>
-              <p>
-                {{ u.tanggal }}
-                •
-                {{ (u.waktu|string)[:5] }}{% if u.waktu_selesai %} - {{ (u.waktu_selesai|string)[:5] }}{% endif %}
-                •
-                {{ u.tempat }}
-              </p>
-            </div>
-          </div>
-
-          {% if u.status == 'approved' %}
-            <button class="small-btn" onclick="window.location.href=`{{ url_for('preview_undangan_user', id=u.id) }}`">
-              Selengkapnya
-            </button>
-          {% else %}
-            <button class="small-btn" disabled>{{ u.status }}</button>
-          {% endif %}
-        </div>
-        {% endfor %}
-      </div>
-    {% else %}
-      <div class="list-item modern-item empty-state">
+    <div class="list-group">
+      {% for u in undangan_terakhir %}
+      <div class="list-item modern-item">
         <div class="list-item-left">
-          <div class="item-icon-circle">📭</div>
+          <div class="item-icon-circle">📨</div>
           <div>
-            <strong>Belum ada undangan</strong>
-            <p>Silakan buat undangan baru.</p>
+            <strong>{{ u.kegiatan }}</strong>
+            <p>
+              {{ u.tanggal }}
+              •
+              {{ (u.waktu|string)[:5] }}{% if u.waktu_selesai %} - {{ (u.waktu_selesai|string)[:5] }}{% endif %}
+              •
+              {{ u.tempat }}
+            </p>
           </div>
         </div>
+
+        {% if u.status == 'approved' %}
+        <button class="small-btn" onclick="window.location.href=`{{ url_for('preview_undangan_user', id=u.id) }}`">
+          Selengkapnya
+        </button>
+        {% else %}
+        <button class="small-btn" disabled>{{ u.status }}</button>
+        {% endif %}
       </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="list-item modern-item empty-state">
+      <div class="list-item-left">
+        <div class="item-icon-circle">📭</div>
+        <div>
+          <strong>Belum ada undangan</strong>
+          <p>Silakan buat undangan baru.</p>
+        </div>
+      </div>
+    </div>
     {% endif %}
   </section>
 
@@ -119,37 +153,52 @@
     </div>
 
     {% if notulensi_terakhir %}
-      <div class="list-group">
-        {% for n in notulensi_terakhir %}
-        <div class="list-item modern-item">
-          <div class="list-item-left">
-            <div class="item-icon-circle">📝</div>
-            <div>
-              <strong>{{ n.kegiatan }}</strong>
-              <p>{{ n.waktu }} • {{ n.tempat }}</p>
-            </div>
-          </div>
-          {% if n.filename %}
-            <a href="{{ url_for('preview_notulensi', id=n.id) }}" class="doc-icon modern-doc-icon" title="Pratinjau Notulensi">📄</a>
-          {% else %}
-            <span class="doc-icon modern-doc-icon" style="opacity: 0.5;">📄</span>
-          {% endif %}
-        </div>
-        {% endfor %}
-      </div>
-    {% else %}
-      <div class="list-item modern-item empty-state">
+    <div class="list-group">
+      {% for n in notulensi_terakhir %}
+      <div class="list-item modern-item">
         <div class="list-item-left">
-          <div class="item-icon-circle">🗒️</div>
+          <div class="item-icon-circle">📝</div>
           <div>
-            <strong>Belum ada notulensi</strong>
-            <p>Silakan buat notulensi baru.</p>
+            <strong>{{ n.kegiatan }}</strong>
+            <p>{{ n.waktu }} • {{ n.tempat }}</p>
           </div>
         </div>
+        {% if n.filename %}
+        <a href="{{ url_for('preview_notulensi', id=n.id) }}" class="doc-icon modern-doc-icon"
+          title="Pratinjau Notulensi">📄</a>
+        {% else %}
+        <span class="doc-icon modern-doc-icon" style="opacity: 0.5;">📄</span>
+        {% endif %}
       </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="list-item modern-item empty-state">
+      <div class="list-item-left">
+        <div class="item-icon-circle">🗒️</div>
+        <div>
+          <strong>Belum ada notulensi</strong>
+          <p>Silakan buat notulensi baru.</p>
+        </div>
+      </div>
+    </div>
     {% endif %}
   </section>
 
   <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+  <script>
+    function toggleNotifDropdown() {
+      const box = document.getElementById("notifDropdownBox");
+      box.classList.toggle("show");
+    }
+    document.addEventListener("click", function (e) {
+      const wrap = document.querySelector(".notif-dropdown-wrap");
+      if (wrap && !wrap.contains(e.target)) {
+        const box = document.getElementById("notifDropdownBox");
+        if (box) box.classList.remove("show");
+      }
+    });
+  </script>
 </body>
+
 </html>

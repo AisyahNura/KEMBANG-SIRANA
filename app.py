@@ -90,6 +90,62 @@ def ensure_undangan_history_table():
 ensure_undangan_history_table()
 
 
+def ensure_notifications_table():
+    cursor = get_cursor()
+    try:
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS notifications (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                user_id INT NOT NULL,
+                undangan_id INT NULL,
+                title VARCHAR(255) NOT NULL,
+                message TEXT NOT NULL,
+                is_read TINYINT(1) DEFAULT 0,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                INDEX idx_notifications_user (user_id),
+                CONSTRAINT fk_notifications_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+        """)
+        conn.commit()
+    except Exception as e:
+        print("Gagal memastikan tabel notifications:", e)
+
+
+ensure_notifications_table()
+
+
+def ensure_notulensi_status_column():
+    cursor = get_cursor()
+    try:
+        cursor.execute("""
+            ALTER TABLE notulensi
+            ADD COLUMN status VARCHAR(20) NOT NULL DEFAULT 'pending'
+        """)
+        conn.commit()
+    except Exception as e:
+        pass
+
+
+ensure_notulensi_status_column()
+
+
+def ensure_notulensi_berita_column():
+    cursor = get_cursor()
+    try:
+        cursor.execute("SHOW COLUMNS FROM notulensi LIKE 'teks_berita'")
+        result = cursor.fetchone()
+        if not result:
+            cursor.execute("ALTER TABLE notulensi ADD COLUMN teks_berita TEXT NULL")
+            conn.commit()
+            print("Kolom 'teks_berita' berhasil ditambahkan ke tabel 'notulensi'.")
+    except Exception as e:
+        print("Gagal memastikan kolom teks_berita di tabel notulensi:", e)
+
+
+ensure_notulensi_berita_column()
+
+
+
 def ensure_kategori_is_active_column():
     cursor = get_cursor()
     try:
@@ -213,7 +269,7 @@ def kirim_email_undangan(to_email, kegiatan, tanggal, waktu, tempat, peserta, pd
         <p>Terlampir kami kirimkan surat undangan kegiatan <b>{kegiatan}</b>.</p>
         {f'<p>Silakan konfirmasi kehadiran Anda melalui link berikut: <a href="{confirm_link}">{confirm_link}</a></p>' if confirm_link else ''}
         <p>Terima kasih.</p>
-        <p><b>Admin SIRANA KEMBANG</b></p>
+        <p><b>Pimpinan Kemenag Jombang</b></p>
         """
 
         # Siapkan data untuk Brevo API
@@ -302,6 +358,49 @@ def generate_pdf_undangan(data_undangan, nama_penerima):
         raise Exception("Gagal membuat PDF undangan")
 
     return pdf_path
+
+# =========================
+# NOTIFIKASI SYSTEM
+# =========================
+@app.context_processor
+def inject_notifications():
+    if "user_id" in session and session.get("role") == "user":
+        try:
+            cursor = get_cursor()
+            cursor.execute("""
+                SELECT * FROM notifications
+                WHERE user_id = %s
+                ORDER BY created_at DESC
+                LIMIT 10
+            """, (session["user_id"],))
+            user_notifications = cursor.fetchall()
+
+            cursor.execute("""
+                SELECT COUNT(*) AS unread_count FROM notifications
+                WHERE user_id = %s AND is_read = 0
+            """, (session["user_id"],))
+            unread_row = cursor.fetchone()
+            unread_count = unread_row["unread_count"] if unread_row else 0
+            return dict(user_notifications=user_notifications, unread_count=unread_count)
+        except Exception as e:
+            print("Error injecting notifications:", e)
+    return dict(user_notifications=[], unread_count=0)
+
+
+@app.route("/notifications/read/<int:id>")
+def read_notification(id):
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+    cursor = get_cursor()
+    cursor.execute("SELECT * FROM notifications WHERE id = %s AND user_id = %s", (id, session["user_id"]))
+    notif = cursor.fetchone()
+    if notif:
+        cursor.execute("UPDATE notifications SET is_read = 1 WHERE id = %s", (id,))
+        conn.commit()
+        if notif.get("undangan_id"):
+            return redirect(url_for("preview_undangan_user", id=notif["undangan_id"]))
+    return redirect(url_for("user_dashboard"))
+
 
 # =========================
 # HALAMAN AWAL
@@ -498,7 +597,7 @@ def kirim_undangan():
     """, (session["user_id"], kegiatan, tempat, tanggal_input, waktu, waktu_selesai, peserta))
     conn.commit()
 
-    flash("Undangan berhasil dikirim ke admin.", "success")
+    flash("Undangan berhasil dikirim ke Pimpinan Kemenag Jombang.", "success")
     return redirect(url_for("riwayat_undangan"))
 
 # =========================
@@ -618,7 +717,7 @@ def preview_undangan_user(id):
         return redirect(url_for("riwayat_undangan"))
 
     if undangan["status"] != "approved":
-        flash("Undangan belum disetujui admin.", "warning")
+        flash("Undangan belum disetujui Pimpinan Kemenag Jombang.", "warning")
         return redirect(url_for("riwayat_undangan"))
 
     nomor_surat = f"001/UND/KEMENAG/{id:03d}"
@@ -641,6 +740,27 @@ def notulensi():
     if "user_id" not in session or session.get("role") != "user":
         return redirect(url_for("login"))
 
+    def render_notulensi_custom(**kwargs):
+        cursor = get_cursor()
+        cursor.execute("""
+            SELECT id, kegiatan, tempat, tanggal, waktu, peserta 
+            FROM undangan 
+            WHERE user_id = %s AND status = 'approved' 
+            ORDER BY id DESC
+        """, (session["user_id"],))
+        approved_undangan = cursor.fetchall()
+        for u in approved_undangan:
+            u['tanggal_indo'] = format_tanggal_indo(u['tanggal']) if u.get('tanggal') else '-'
+            u['waktu_indo'] = (str(u['waktu'])[:5] + " WIB") if u.get('waktu') else '-'
+            
+        selected_id = request.args.get('undangan_id', type=int) if request.method == 'GET' else request.form.get('undangan_id', type=int)
+        return render_template(
+            "user/notulensi.html",
+            approved_undangan=approved_undangan,
+            selected_undangan_id=selected_id,
+            **kwargs
+        )
+
     if request.method == "POST":
         # Lazy import: avoid loading heavy AI modules when opening the page (GET).
         from services.filter_service import clean_transcript
@@ -661,8 +781,7 @@ def notulensi():
         notulensi_path = None
 
         if not file or file.filename == "":
-            return render_template(
-                "user/notulensi.html",
+            return render_notulensi_custom(
                 message="Pilih file audio dulu",
                 hasil_notulensi=None,
                 transkrip_asli=None,
@@ -673,8 +792,7 @@ def notulensi():
             )
 
         if not allowed_file(file.filename):
-            return render_template(
-                "user/notulensi.html",
+            return render_notulensi_custom(
                 message="Format file harus mp3, wav, mp4, m4a atau aac",
                 hasil_notulensi=None,
                 transkrip_asli=None,
@@ -707,8 +825,7 @@ def notulensi():
                 # Tentukan pesan error berdasarkan jenis pelanggaran durasi
                 pesan_error = "Unggahan ditolak! Durasi audio terlalu pendek." if durasi_menit < 1.0 else "Unggahan ditolak! Durasi audio melebihi batas maksimal 60 menit."
                 
-                return render_template(
-                    "user/notulensi.html",
+                return render_notulensi_custom(
                     message=pesan_error,
                     hasil_notulensi=None,
                     transkrip_asli=None,
@@ -843,8 +960,7 @@ def notulensi():
                     diarization_text = "Diarization tidak berhasil diproses."
 
             else:
-                return render_template(
-                    "user/notulensi.html",
+                return render_notulensi_custom(
                     message="Jenis proses tidak valid.",
                     hasil_notulensi=None,
                     transkrip_asli=None,
@@ -872,8 +988,7 @@ def notulensi():
                 )
                 hasil_notulensi = isi_notulensi
             except Exception as e:
-                return render_template(
-                    "user/notulensi.html",
+                return render_notulensi_custom(
                     message=f"Gagal membuat dokumen notulensi: {str(e)}",
                     diarization_text=diarization_text,
                     transkrip_asli=transkrip_asli,
@@ -899,8 +1014,7 @@ def notulensi():
                 "diarization": "Transkripsi dan diarization berhasil dibuat."
             }
 
-            return render_template(
-                "user/notulensi.html",
+            return render_notulensi_custom(
                 message=pesan_map.get(jenis_proses, "Notulensi berhasil dibuat."),
                 hasil_notulensi=hasil_notulensi,
                 transkrip_asli=transkrip_asli,
@@ -913,8 +1027,7 @@ def notulensi():
         except Exception as e:
             conn.rollback()
             print("ERROR NOTULENSI:", e)
-            return render_template(
-                "user/notulensi.html",
+            return render_notulensi_custom(
                 message=f"Terjadi kesalahan: {str(e)}",
                 hasil_notulensi=hasil_notulensi,
                 transkrip_asli=transkrip_asli,
@@ -927,8 +1040,7 @@ def notulensi():
         finally:
             cursor.close()
 
-    return render_template(
-        "user/notulensi.html",
+    return render_notulensi_custom(
         hasil_notulensi=None,
         transkrip_asli=None,
         transkrip_bersih=None,
@@ -1120,7 +1232,54 @@ def lihat_undangan_admin(id):
 
 
 # =========================
-# ADMIN - SETUJUI UNDANGAN + KIRIM EMAIL & WHATSAPP
+# ADMIN - SETUJUI UNDANGAN (ACC SAJA)
+# =========================
+@app.route("/admin/undangan/<int:id>/setujui", methods=["POST"])
+def setujui_undangan(id):
+    if "user_id" not in session or session.get("role") != "admin":
+        return redirect(url_for("login"))
+
+    cursor = get_cursor()
+    cursor.execute("SELECT * FROM undangan WHERE id = %s", (id,))
+    data = cursor.fetchone()
+
+    if not data:
+        flash("Undangan tidak ditemukan.", "danger")
+        return redirect(url_for("admin_approval"))
+
+    cursor.execute("""
+        UPDATE undangan
+        SET status = 'approved', catatan_admin = NULL
+        WHERE id = %s
+    """, (id,))
+    conn.commit()
+
+    if data.get("user_id"):
+        try:
+            cursor.execute("""
+                SELECT id FROM notifications 
+                WHERE user_id = %s AND undangan_id = %s AND title = 'Undangan Disetujui'
+            """, (data["user_id"], data["id"]))
+            if not cursor.fetchone():
+                cursor.execute("""
+                    INSERT INTO notifications (user_id, undangan_id, title, message, is_read)
+                    VALUES (%s, %s, %s, %s, 0)
+                """, (
+                    data["user_id"],
+                    data["id"],
+                    "Undangan Disetujui",
+                    f"Undangan kegiatan '{data['kegiatan']}' telah disetujui oleh Pimpinan Kemenag Jombang."
+                ))
+                conn.commit()
+        except Exception as e:
+            print("Gagal menyimpan notifikasi ACC:", e)
+
+    flash("Undangan berhasil disetujui oleh Pimpinan.", "success")
+    return redirect(url_for("admin_approval"))
+
+
+# =========================
+# ADMIN - KIRIM EMAIL & WHATSAPP
 # =========================
 def proses_setujui_undangan(id, channel="email"):
     if "user_id" not in session or session.get("role") != "admin":
@@ -1145,6 +1304,26 @@ def proses_setujui_undangan(id, channel="email"):
         WHERE id = %s
     """, (id,))
     conn.commit()
+
+    if data.get("user_id"):
+        try:
+            cursor.execute("""
+                SELECT id FROM notifications 
+                WHERE user_id = %s AND undangan_id = %s AND title = 'Undangan Disetujui'
+            """, (data["user_id"], data["id"]))
+            if not cursor.fetchone():
+                cursor.execute("""
+                    INSERT INTO notifications (user_id, undangan_id, title, message, is_read)
+                    VALUES (%s, %s, %s, %s, 0)
+                """, (
+                    data["user_id"],
+                    data["id"],
+                    "Undangan Disetujui",
+                    f"Undangan kegiatan '{data['kegiatan']}' telah disetujui oleh Pimpinan Kemenag Jombang."
+                ))
+                conn.commit()
+        except Exception as e:
+            print("Gagal menyimpan notifikasi ACC:", e)
 
     cursor.execute("""
         SELECT m.nama, m.email, m.nomor_hp
@@ -1278,11 +1457,11 @@ Kantor Kementerian Agama
                 total_wa_gagal += 1
 
     if channel == "email":
-        flash(f"Undangan berhasil disetujui dan email terkirim: {total_email}.", "success")
+        flash(f"Undangan berhasil dikirim. Email terkirim: {total_email}.", "success")
     elif channel == "whatsapp":
-        flash(f"Undangan berhasil disetujui. WhatsApp terkirim: {total_wa_terkirim}, gagal: {total_wa_gagal}.", "success")
+        flash(f"Undangan berhasil dikirim. WhatsApp terkirim: {total_wa_terkirim}, gagal: {total_wa_gagal}.", "success")
     else:
-        flash(f"Undangan berhasil disetujui. Email terkirim: {total_email}. WhatsApp terkirim: {total_wa_terkirim}, gagal: {total_wa_gagal}.", "success")
+        flash(f"Undangan berhasil dikirim. Email terkirim: {total_email}. WhatsApp terkirim: {total_wa_terkirim}, gagal: {total_wa_gagal}.", "success")
 
     return redirect(url_for("admin_approval"))
 
@@ -1341,15 +1520,33 @@ def tolak_undangan(id):
     if "user_id" not in session or session.get("role") != "admin":
         return redirect(url_for("login"))
 
-    catatan_admin = request.form.get("catatan_admin", "Ditolak admin")
+    catatan_admin = request.form.get("catatan_admin", "Ditolak Pimpinan Kemenag Jombang")
 
     cursor = get_cursor()
+    cursor.execute("SELECT user_id, kegiatan FROM undangan WHERE id = %s", (id,))
+    undangan_data = cursor.fetchone()
+
     cursor.execute("""
         UPDATE undangan
         SET status = 'rejected', catatan_admin = %s
         WHERE id = %s
     """, (catatan_admin, id))
     conn.commit()
+
+    if undangan_data and undangan_data.get("user_id"):
+        try:
+            cursor.execute("""
+                INSERT INTO notifications (user_id, undangan_id, title, message, is_read)
+                VALUES (%s, %s, %s, %s, 0)
+            """, (
+                undangan_data["user_id"],
+                id,
+                "Undangan Ditolak",
+                f"Undangan kegiatan '{undangan_data['kegiatan']}' ditolak oleh Pimpinan Kemenag Jombang. Catatan: {catatan_admin}"
+            ))
+            conn.commit()
+        except Exception as e:
+            print("Gagal menyimpan notifikasi tolak:", e)
 
     flash("Undangan ditolak.", "warning")
     return redirect(url_for("admin_approval"))
@@ -1477,6 +1674,22 @@ def admin_monitoring():
         (9, "September"), (10, "Oktober"), (11, "November"), (12, "Desember")
     ]
 
+    cursor.execute("""
+        SELECT 
+            n.id,
+            k.nama_kegiatan,
+            k.waktu AS tanggal_kegiatan,
+            n.status,
+            n.file_path,
+            u.email AS pembuat,
+            k.created_by
+        FROM notulensi n
+        JOIN kegiatan k ON n.kegiatan_id = k.id
+        LEFT JOIN users u ON k.created_by = u.id
+        ORDER BY n.created_at DESC
+    """)
+    daftar_notulensi_admin = cursor.fetchall()
+
     return render_template(
         "admin/monitoring.html",
         aktivitas=aktivitas,
@@ -1488,8 +1701,49 @@ def admin_monitoring():
         available_years=available_years,
         format_waktu_rentang=format_waktu_rentang,
         konfirmasi_stats=konfirmasi_stats,
-        konfirmasi_list=konfirmasi_list
+        konfirmasi_list=konfirmasi_list,
+        daftar_notulensi_admin=daftar_notulensi_admin
     )
+
+
+@app.route("/admin/notulensi/<int:id>/validasi", methods=["POST"])
+def validasi_notulensi(id):
+    if "user_id" not in session or session.get("role") != "admin":
+        return redirect(url_for("login"))
+
+    cursor = get_cursor()
+    cursor.execute("""
+        SELECT n.*, k.nama_kegiatan, k.created_by
+        FROM notulensi n
+        JOIN kegiatan k ON n.kegiatan_id = k.id
+        WHERE n.id = %s
+    """, (id,))
+    notif_data = cursor.fetchone()
+
+    cursor.execute("""
+        UPDATE notulensi
+        SET status = 'validated'
+        WHERE id = %s
+    """, (id,))
+    conn.commit()
+
+    if notif_data and notif_data.get("created_by"):
+        try:
+            cursor.execute("""
+                INSERT INTO notifications (user_id, title, message, is_read)
+                VALUES (%s, %s, %s, 0)
+            """, (
+                notif_data["created_by"],
+                "Notulensi Divalidasi",
+                f"Notulensi kegiatan '{notif_data['nama_kegiatan']}' telah divalidasi oleh Pimpinan Kemenag Jombang."
+            ))
+            conn.commit()
+        except Exception as e:
+            print("Gagal menyimpan notifikasi validasi notulensi:", e)
+
+    flash("Notulensi berhasil divalidasi oleh Pimpinan.", "success")
+    return redirect(url_for("admin_monitoring"))
+
 
 
 # =========================
@@ -1817,6 +2071,234 @@ def preview_notulensi(id):
         filename=filename,
         waktu_kegiatan=waktu_kegiatan_formatted,
         waktu_pembuatan=waktu_pembuatan_formatted
+    )
+
+
+@app.route("/admin/notulensi/preview/<int:id>")
+def admin_preview_notulensi(id):
+    if "user_id" not in session or session.get("role") != "admin":
+        return redirect(url_for("login"))
+
+    cursor = get_cursor()
+    cursor.execute("""
+        SELECT n.id AS notulensi_id, n.file_path, n.ringkasan, n.created_at, n.status,
+               k.id AS kegiatan_id, k.nama_kegiatan AS kegiatan, k.tempat, k.waktu AS waktu_kegiatan, u.nama AS pembuat_nama, u.email AS pembuat_email
+        FROM notulensi n
+        JOIN kegiatan k ON n.kegiatan_id = k.id
+        LEFT JOIN users u ON k.created_by = u.id
+        WHERE n.id = %s
+    """, (id,))
+    notulensi = cursor.fetchone()
+
+    if not notulensi:
+        flash("Notulensi tidak ditemukan.", "danger")
+        return redirect(url_for("admin_monitoring"))
+
+    waktu_kegiatan_formatted = "-"
+    if notulensi.get("waktu_kegiatan"):
+        try:
+            waktu_kegiatan_formatted = format_tanggal_indo(notulensi["waktu_kegiatan"]) + " - " + notulensi["waktu_kegiatan"].strftime("%H:%M") + " WIB"
+        except Exception:
+            waktu_kegiatan_formatted = str(notulensi["waktu_kegiatan"])
+
+    waktu_pembuatan_formatted = "-"
+    if notulensi.get("created_at"):
+        try:
+            waktu_pembuatan_formatted = format_tanggal_indo(notulensi["created_at"]) + " - " + notulensi["created_at"].strftime("%H:%M") + " WIB"
+        except Exception:
+            waktu_pembuatan_formatted = str(notulensi["created_at"])
+
+    cursor.execute("SELECT nama FROM peserta WHERE kegiatan_id = %s", (notulensi["kegiatan_id"],))
+    peserta_rows = cursor.fetchall()
+    peserta_list = [p["nama"] for p in peserta_rows]
+    peserta_str = ", ".join(peserta_list) if peserta_list else "-"
+
+    content = ""
+    file_path = notulensi["file_path"]
+    filename = os.path.basename(file_path.replace("\\", "/")) if file_path else ""
+    
+    if file_path and os.path.exists(file_path):
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                content = f.read()
+        except Exception as e:
+            content = f"Gagal membaca isi berkas notulensi: {e}"
+    else:
+        content = "Berkas notulensi (.txt) tidak ditemukan di server."
+
+    return render_template(
+        "admin/preview-notulensi.html",
+        notulensi=notulensi,
+        peserta=peserta_str,
+        content=content,
+        filename=filename,
+        waktu_kegiatan=waktu_kegiatan_formatted,
+        waktu_pembuatan=waktu_pembuatan_formatted
+    )
+
+
+@app.route("/user/notulensi/berita/<int:id>", methods=["GET", "POST"])
+def user_preview_berita(id):
+    if "user_id" not in session or session.get("role") != "user":
+        return redirect(url_for("login"))
+
+    cursor = get_cursor()
+    
+    # Ambil data notulensi dan kegiatannya
+    cursor.execute("""
+        SELECT n.id AS notulensi_id, n.file_path, n.ringkasan, n.teks_berita, n.created_at,
+               k.id AS kegiatan_id, k.nama_kegiatan AS kegiatan, k.tempat, k.waktu AS waktu_kegiatan, k.created_by
+        FROM notulensi n
+        JOIN kegiatan k ON n.kegiatan_id = k.id
+        WHERE n.id = %s AND k.created_by = %s
+    """, (id, session["user_id"]))
+    notulensi = cursor.fetchone()
+
+    if not notulensi:
+        flash("Notulensi tidak ditemukan.", "danger")
+        return redirect(url_for("riwayat_notulensi"))
+
+    waktu_kegiatan_formatted = "-"
+    if notulensi.get("waktu_kegiatan"):
+        try:
+            waktu_kegiatan_formatted = format_tanggal_indo(notulensi["waktu_kegiatan"]) + " - " + notulensi["waktu_kegiatan"].strftime("%H:%M") + " WIB"
+        except Exception:
+            waktu_kegiatan_formatted = str(notulensi["waktu_kegiatan"])
+
+    # Ambil data nama peserta rapat
+    cursor.execute("SELECT nama FROM peserta WHERE kegiatan_id = %s", (notulensi["kegiatan_id"],))
+    peserta_rows = cursor.fetchall()
+    peserta_list = [p["nama"] for p in peserta_rows]
+    peserta_str = ", ".join(peserta_list) if peserta_list else "-"
+
+    if request.method == "POST":
+        # Simpan perubahan teks berita
+        teks_edit = request.form.get("teks_berita", "").strip()
+        cursor.execute("UPDATE notulensi SET teks_berita = %s WHERE id = %s", (teks_edit, id))
+        conn.commit()
+        flash("Berita berhasil disimpan.", "success")
+        return redirect(url_for("user_preview_berita", id=id))
+
+    # Jika GET dan kolom teks_berita masih kosong atau diminta regenerasi, generate otomatis
+    teks_berita = notulensi.get("teks_berita")
+    if not teks_berita or request.args.get("regenerate") == "true":
+        # Baca isi file .txt notulensi dari server untuk bahan generate
+        content = ""
+        file_path = notulensi["file_path"]
+        if file_path and os.path.exists(file_path):
+            try:
+                with open(file_path, "r", encoding="utf-8") as f:
+                    content = f.read()
+                
+                # Bersihkan hanya baris "File Rekaman" dan "Jenis Proses" agar tidak masuk ke berita
+                lines = content.split('\n')
+                cleaned_lines = [line for line in lines if not any(k in line for k in ["File Rekaman", "Jenis Proses"])]
+                content = '\n'.join(cleaned_lines)
+            except Exception:
+                content = notulensi["ringkasan"]
+        else:
+            content = notulensi["ringkasan"]
+
+        from services.summary_service import generate_berita_kemenag
+        teks_berita = generate_berita_kemenag(
+            kegiatan=notulensi["kegiatan"],
+            tempat=notulensi["tempat"],
+            peserta=peserta_str,
+            content=content
+        )
+        # Simpan hasil generate pertama ke database
+        cursor.execute("UPDATE notulensi SET teks_berita = %s WHERE id = %s", (teks_berita, id))
+        conn.commit()
+
+    return render_template(
+        "user/preview-berita.html",
+        notulensi=notulensi,
+        peserta=peserta_str,
+        teks_berita=teks_berita,
+        waktu_kegiatan=waktu_kegiatan_formatted
+    )
+
+
+@app.route("/admin/notulensi/berita/<int:id>", methods=["GET", "POST"])
+def admin_preview_berita(id):
+    if "user_id" not in session or session.get("role") != "admin":
+        return redirect(url_for("login"))
+
+    cursor = get_cursor()
+    
+    # Ambil data notulensi dan kegiatannya
+    cursor.execute("""
+        SELECT n.id AS notulensi_id, n.file_path, n.ringkasan, n.teks_berita, n.created_at,
+               k.id AS kegiatan_id, k.nama_kegiatan AS kegiatan, k.tempat, k.waktu AS waktu_kegiatan, u.nama AS pembuat_nama
+        FROM notulensi n
+        JOIN kegiatan k ON n.kegiatan_id = k.id
+        LEFT JOIN users u ON k.created_by = u.id
+        WHERE n.id = %s
+    """, (id,))
+    notulensi = cursor.fetchone()
+
+    if not notulensi:
+        flash("Notulensi tidak ditemukan.", "danger")
+        return redirect(url_for("admin_monitoring"))
+
+    waktu_kegiatan_formatted = "-"
+    if notulensi.get("waktu_kegiatan"):
+        try:
+            waktu_kegiatan_formatted = format_tanggal_indo(notulensi["waktu_kegiatan"]) + " - " + notulensi["waktu_kegiatan"].strftime("%H:%M") + " WIB"
+        except Exception:
+            waktu_kegiatan_formatted = str(notulensi["waktu_kegiatan"])
+
+    # Ambil data nama peserta rapat
+    cursor.execute("SELECT nama FROM peserta WHERE kegiatan_id = %s", (notulensi["kegiatan_id"],))
+    peserta_rows = cursor.fetchall()
+    peserta_list = [p["nama"] for p in peserta_rows]
+    peserta_str = ", ".join(peserta_list) if peserta_list else "-"
+
+    if request.method == "POST":
+        # Simpan perubahan teks berita
+        teks_edit = request.form.get("teks_berita", "").strip()
+        cursor.execute("UPDATE notulensi SET teks_berita = %s WHERE id = %s", (teks_edit, id))
+        conn.commit()
+        flash("Berita berhasil disimpan.", "success")
+        return redirect(url_for("admin_preview_berita", id=id))
+
+    # Jika GET dan kolom teks_berita masih kosong atau diminta regenerasi, generate otomatis
+    teks_berita = notulensi.get("teks_berita")
+    if not teks_berita or request.args.get("regenerate") == "true":
+        # Baca isi file .txt notulensi dari server untuk bahan generate
+        content = ""
+        file_path = notulensi["file_path"]
+        if file_path and os.path.exists(file_path):
+            try:
+                with open(file_path, "r", encoding="utf-8") as f:
+                    content = f.read()
+                
+                # Bersihkan hanya baris "File Rekaman" dan "Jenis Proses" agar tidak masuk ke berita
+                lines = content.split('\n')
+                cleaned_lines = [line for line in lines if not any(k in line for k in ["File Rekaman", "Jenis Proses"])]
+                content = '\n'.join(cleaned_lines)
+            except Exception:
+                content = notulensi["ringkasan"]
+        else:
+            content = notulensi["ringkasan"]
+
+        from services.summary_service import generate_berita_kemenag
+        teks_berita = generate_berita_kemenag(
+            kegiatan=notulensi["kegiatan"],
+            tempat=notulensi["tempat"],
+            peserta=peserta_str,
+            content=content
+        )
+        # Simpan hasil generate pertama ke database
+        cursor.execute("UPDATE notulensi SET teks_berita = %s WHERE id = %s", (teks_berita, id))
+        conn.commit()
+
+    return render_template(
+        "admin/preview-berita.html",
+        notulensi=notulensi,
+        peserta=peserta_str,
+        teks_berita=teks_berita,
+        waktu_kegiatan=waktu_kegiatan_formatted
     )
 
 

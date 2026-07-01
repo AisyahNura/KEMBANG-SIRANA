@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dashboard Admin | SIRANA KEMBANG</title>
+  <title>Dashboard Pimpinan Kemenag Jombang | SIRANA KEMBANG</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
 </head>
 <body>
@@ -14,7 +14,7 @@
         <div class="sidebar-brand">
           <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Logo Kemenag">
           <h2>SIRANA KEMBANG</h2>
-          <p>Admin Panel</p>
+          <p>Pimpinan Kemenag Jombang</p>
         </div>
 
         <ul class="sidebar-menu">
@@ -31,7 +31,7 @@
     </aside>
 
     <main class="main-content">
-      <h1>Dashboard Admin</h1>
+      <h1>Dashboard Pimpinan Kemenag Jombang</h1>
 
       <div class="stats">
         <div class="card blue">
@@ -71,7 +71,9 @@
         </div>
 
         <div class="chart-container">
-          <canvas id="undanganChart"></canvas>
+          <canvas id="undanganChart" 
+                  data-labels="{{ (chart_labels if chart_labels is defined else []) | tojson | forceescape }}" 
+                  data-values="{{ (chart_data if chart_data is defined else []) | tojson | forceescape }}"></canvas>
         </div>
       </section>
 
@@ -116,12 +118,11 @@
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script>
-    const labels = {{ (chart_labels if chart_labels is defined else []) | tojson }};
-    const dataBulanan = {{ (chart_data if chart_data is defined else []) | tojson }};
-
     const canvas = document.getElementById('undanganChart');
 
     if (canvas) {
+      const labels = JSON.parse(canvas.dataset.labels || '[]');
+      const dataBulanan = JSON.parse(canvas.dataset.values || '[]');
       const ctx = canvas.getContext('2d');
 
       new Chart(ctx, {

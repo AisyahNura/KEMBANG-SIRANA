@@ -37,14 +37,61 @@
       <h3>Form Data Notulensi</h3>
 
       <form method="POST" enctype="multipart/form-data" onsubmit="showLoading()">
-        <label for="kegiatan">Nama Kegiatan</label>
-        <input type="text" id="kegiatan" name="kegiatan" placeholder="Masukkan nama kegiatan" required>
+        <div style="background: #f8fafc; padding: 18px; border-radius: 10px; margin-bottom: 20px; border: 1px solid #e2e8f0;">
+          <label style="font-weight: 600; color: #1e293b; margin-bottom: 12px; display: block; font-size: 14px;">Tipe Rapat / Notulensi</label>
+          
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-bottom: 16px;">
+            <label class="tipe-card-option" id="cardTipeUndangan" style="display: flex; align-items: center; gap: 10px; padding: 12px 16px; background: #ffffff; border: 1.5px solid #cbd5e1; border-radius: 8px; cursor: pointer; transition: all 0.2s ease;">
+              <input type="radio" name="tipe_rapat" value="undangan" id="tipeUndangan" onchange="toggleTipeRapat()" style="margin: 0; width: 16px; height: 16px; accent-color: #059669; cursor: pointer;" {% if selected_undangan_id or approved_undangan %}checked{% endif %}>
+              <span style="font-size: 14px; font-weight: 500; color: #1e293b; white-space: nowrap;">Pilih dari Undangan Resmi</span>
+            </label>
+            
+            <label class="tipe-card-option" id="cardTipeMandiri" style="display: flex; align-items: center; gap: 10px; padding: 12px 16px; background: #ffffff; border: 1.5px solid #cbd5e1; border-radius: 8px; cursor: pointer; transition: all 0.2s ease;">
+              <input type="radio" name="tipe_rapat" value="mandiri" id="tipeMandiri" onchange="toggleTipeRapat()" style="margin: 0; width: 16px; height: 16px; accent-color: #059669; cursor: pointer;" {% if not selected_undangan_id and not approved_undangan %}checked{% endif %}>
+              <span style="font-size: 14px; font-weight: 500; color: #1e293b; white-space: nowrap;">Rapat Mandiri / Tanpa Undangan</span>
+            </label>
+          </div>
 
-        <label for="tempat">Tempat</label>
-        <input type="text" id="tempat" name="tempat" placeholder="Masukkan lokasi kegiatan" required>
+          <div id="wrapperPilihUndangan">
+            <label for="selectUndangan" style="font-weight: 600; display: block; margin-bottom: 6px; font-size: 13px; color: #475569;">Pilih Kegiatan Rapat (Disetujui):</label>
+            <select id="selectUndangan" name="undangan_id" style="width: 100%; padding: 11px 14px; border-radius: 8px; border: 1.5px solid #cbd5e1; font-size: 14px; background-color: #fff; color: #1e293b;" onchange="autoFillUndangan()">
+              <option value="">-- Pilih Kegiatan Rapat Terjadwal --</option>
+              {% if approved_undangan %}
+                {% for u in approved_undangan %}
+                  <option value="{{ u.id }}" 
+                          data-kegiatan="{{ u.kegiatan }}" 
+                          data-tempat="{{ u.tempat }}" 
+                          data-peserta="{{ u.peserta }}"
+                          data-tanggal="{{ u.tanggal_indo }}"
+                          data-waktu="{{ u.waktu_indo }}"
+                          {% if selected_undangan_id == u.id %}selected{% endif %}>
+                    {{ u.kegiatan }} ({{ u.tanggal_indo }}{% if u.waktu_indo and u.waktu_indo != '-' %}, {{ u.waktu_indo }}{% endif %})
+                  </option>
+                {% endfor %}
+              {% endif %}
+            </select>
 
-        <label for="peserta">Peserta</label>
-        <input type="text" id="peserta" name="peserta" placeholder="Contoh: Kepala Madrasah, Staf TU, dll">
+            <div id="infoCardUndangan" style="display: none; margin-top: 14px; background: #ffffff; padding: 14px 18px; border-radius: 8px; border-left: 4px solid #059669; box-shadow: 0 1px 3px rgba(0,0,0,0.05); font-size: 13px; color: #334155;">
+              <div style="font-weight: 600; color: #0f172a; margin-bottom: 6px; font-size: 14.5px;" id="cardJudul"></div>
+              <div style="display: flex; gap: 24px; flex-wrap: wrap; color: #64748b; margin-bottom: 6px;">
+                <span><strong>Tempat:</strong> <span id="cardTempat" style="color: #1e293b;"></span></span>
+                <span><strong>Waktu & Tanggal:</strong> <span id="cardWaktu" style="color: #1e293b;"></span></span>
+              </div>
+              <div style="color: #64748b;"><strong>Target Peserta:</strong> <span id="cardPeserta" style="color: #1e293b;"></span></div>
+            </div>
+          </div>
+        </div>
+
+        <div id="wrapperInputManual" style="display: none;">
+          <label for="kegiatan">Nama Kegiatan</label>
+          <input type="text" id="kegiatan" name="kegiatan" placeholder="Masukkan nama kegiatan">
+
+          <label for="tempat">Tempat</label>
+          <input type="text" id="tempat" name="tempat" placeholder="Masukkan lokasi kegiatan">
+
+          <label for="peserta">Peserta</label>
+          <input type="text" id="peserta" name="peserta" placeholder="Contoh: Kepala Madrasah, Staf TU, dll">
+        </div>
 
         <div class="upload-box">
           <div class="upload-icon">🎙️</div>
@@ -163,6 +210,98 @@
 
       loadingText.style.display = "block";
     }
+
+    function updateCardHighlight() {
+      const isUndangan = document.getElementById("tipeUndangan").checked;
+      const cardU = document.getElementById("cardTipeUndangan");
+      const cardM = document.getElementById("cardTipeMandiri");
+      if (cardU && cardM) {
+        if (isUndangan) {
+          cardU.style.borderColor = "#059669";
+          cardU.style.backgroundColor = "#f0fdf4";
+          cardU.style.boxShadow = "0 2px 4px rgba(5, 150, 105, 0.1)";
+          cardM.style.borderColor = "#cbd5e1";
+          cardM.style.backgroundColor = "#ffffff";
+          cardM.style.boxShadow = "none";
+        } else {
+          cardM.style.borderColor = "#059669";
+          cardM.style.backgroundColor = "#f0fdf4";
+          cardM.style.boxShadow = "0 2px 4px rgba(5, 150, 105, 0.1)";
+          cardU.style.borderColor = "#cbd5e1";
+          cardU.style.backgroundColor = "#ffffff";
+          cardU.style.boxShadow = "none";
+        }
+      }
+    }
+
+    function toggleTipeRapat() {
+      const isUndangan = document.getElementById("tipeUndangan").checked;
+      const wrapperPilih = document.getElementById("wrapperPilihUndangan");
+      const wrapperManual = document.getElementById("wrapperInputManual");
+      const infoCard = document.getElementById("infoCardUndangan");
+      const kegiatanInput = document.getElementById("kegiatan");
+      const tempatInput = document.getElementById("tempat");
+      const pesertaInput = document.getElementById("peserta");
+
+      updateCardHighlight();
+
+      if (isUndangan) {
+        wrapperPilih.style.display = "block";
+        if (wrapperManual) wrapperManual.style.display = "none";
+        kegiatanInput.required = false;
+        tempatInput.required = false;
+        autoFillUndangan();
+      } else {
+        wrapperPilih.style.display = "none";
+        if (wrapperManual) wrapperManual.style.display = "block";
+        if (infoCard) infoCard.style.display = "none";
+        document.getElementById("selectUndangan").value = "";
+        kegiatanInput.value = "";
+        tempatInput.value = "";
+        pesertaInput.value = "";
+        kegiatanInput.required = true;
+        tempatInput.required = true;
+      }
+    }
+
+    function autoFillUndangan() {
+      const select = document.getElementById("selectUndangan");
+      if (!select) return;
+      const selectedOption = select.options[select.selectedIndex];
+      const kegiatanInput = document.getElementById("kegiatan");
+      const tempatInput = document.getElementById("tempat");
+      const pesertaInput = document.getElementById("peserta");
+      const infoCard = document.getElementById("infoCardUndangan");
+
+      if (selectedOption && selectedOption.value !== "") {
+        const keg = selectedOption.getAttribute("data-kegiatan") || "";
+        const tmp = selectedOption.getAttribute("data-tempat") || "";
+        const psr = selectedOption.getAttribute("data-peserta") || "";
+        const tgl = selectedOption.getAttribute("data-tanggal") || "";
+        const wkt = selectedOption.getAttribute("data-waktu") || "";
+
+        kegiatanInput.value = keg;
+        tempatInput.value = tmp;
+        pesertaInput.value = psr;
+
+        if (infoCard) {
+          document.getElementById("cardJudul").innerText = keg;
+          document.getElementById("cardTempat").innerText = tmp;
+          document.getElementById("cardWaktu").innerText = tgl + (wkt && wkt !== '-' ? ", " + wkt : "");
+          document.getElementById("cardPeserta").innerText = psr || "-";
+          infoCard.style.display = "block";
+        }
+      } else {
+        kegiatanInput.value = "";
+        tempatInput.value = "";
+        pesertaInput.value = "";
+        if (infoCard) infoCard.style.display = "none";
+      }
+    }
+
+    document.addEventListener("DOMContentLoaded", function() {
+      toggleTipeRapat();
+    });
   </script>
 
 </body>

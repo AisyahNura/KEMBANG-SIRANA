@@ -115,36 +115,17 @@
 
     <div class="kirim-admin-wrap">
       <p><strong>Status:</strong> {{ undangan.status }}</p>
-      <p><strong>Pembuat:</strong> {{ undangan.pembuat or 'User' }}</p>
+      <p><strong>Pembuat:</strong> {{ undangan.pembuat or 'Humas Kemenag Jombang' }}</p>
 
       {% if undangan.status == 'pending' %}
         <div style="margin-top: 20px; margin-bottom: 20px;">
-
           <form
             method="POST"
-            action="{{ url_for('setujui_undangan_email', id=undangan.id) }}"
+            action="{{ url_for('setujui_undangan', id=undangan.id) }}"
             style="display:inline-block; margin-right:10px; margin-bottom:10px;"
-            onsubmit="return confirm('Setujui undangan dan kirim melalui Email?')"
+            onsubmit="return confirm('Setujui undangan ini?')"
           >
-            <button type="submit" class="btn-green">Setujui via Email</button>
-          </form>
-
-          <form
-            method="POST"
-            action="{{ url_for('setujui_undangan_whatsapp', id=undangan.id) }}"
-            style="display:inline-block; margin-right:10px; margin-bottom:10px;"
-            onsubmit="return confirm('Setujui undangan dan kirim melalui WhatsApp?')"
-          >
-            <button type="submit" class="btn-green">Setujui via WhatsApp</button>
-          </form>
-
-          <form
-            method="POST"
-            action="{{ url_for('setujui_undangan_semua', id=undangan.id) }}"
-            style="display:inline-block; margin-right:10px; margin-bottom:10px;"
-            onsubmit="return confirm('Setujui undangan dan kirim melalui Email & WhatsApp?')"
-          >
-            <button type="submit" class="btn-green">Setujui Email & WhatsApp</button>
+            <button type="submit" class="btn-green">Setujui</button>
           </form>
 
           <a href="{{ url_for('admin_approval') }}" class="btn-green" style="text-decoration:none; display:inline-block; margin-bottom:10px;">
@@ -165,8 +146,35 @@
           </button>
         </form>
       {% else %}
-        <div style="margin-top: 20px;">
-          <a href="{{ url_for('admin_approval') }}" class="btn-green" style="text-decoration:none; display:inline-block;">
+        <div style="margin-top: 20px; margin-bottom: 20px;">
+          <form
+            method="POST"
+            action="{{ url_for('setujui_undangan_email', id=undangan.id) }}"
+            style="display:inline-block; margin-right:10px; margin-bottom:10px;"
+            onsubmit="return confirm('Kirim undangan melalui Email ke peserta?')"
+          >
+            <button type="submit" class="btn-green">Kirim via Email</button>
+          </form>
+
+          <form
+            method="POST"
+            action="{{ url_for('setujui_undangan_whatsapp', id=undangan.id) }}"
+            style="display:inline-block; margin-right:10px; margin-bottom:10px;"
+            onsubmit="return confirm('Kirim undangan melalui WhatsApp ke peserta?')"
+          >
+            <button type="submit" class="btn-green">Kirim via WhatsApp</button>
+          </form>
+
+          <form
+            method="POST"
+            action="{{ url_for('setujui_undangan_semua', id=undangan.id) }}"
+            style="display:inline-block; margin-right:10px; margin-bottom:10px;"
+            onsubmit="return confirm('Kirim undangan melalui Email & WhatsApp ke peserta?')"
+          >
+            <button type="submit" class="btn-green">Kirim Email & WhatsApp</button>
+          </form>
+
+          <a href="{{ url_for('admin_approval') }}" class="btn-green" style="text-decoration:none; display:inline-block; margin-bottom:10px;">
             Kembali ke Persetujuan
           </a>
         </div>
